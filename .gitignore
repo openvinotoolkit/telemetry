@@ -1,0 +1,35 @@
+# build/artifact dirs
+_*
+# but ensure we don't skip __init__.py
+!__init__.py
+
+# developer tools
+*.idea
+.vscode
+.DS_Store
+**/tags
+compile_commands.json
+.local_vimrc
+.gdb_history
+.vimspector.json
+doc/
+.repo/
+
+*.project
+*.cproject
+*.pydevproject
+*.settings
+*/gen/
+__pycache__
+*.swp
+/config.xml
+
+# Python-specific
+*.env3
+*.pyc
+
+# Tests-specific
+*.coverage
+*htmlcov
+*pylint_report.txt
+*pylint_report_comments.txt
