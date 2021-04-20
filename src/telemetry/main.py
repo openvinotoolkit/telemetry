@@ -1,9 +1,8 @@
 # Copyright (C) 2018-2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-from .utils import isip
-
 from .backend.backend import BackendRegistry
+from .utils.opt_in_checker import OptInChecker, CFCheckResult
 from .utils.sender import TelemetrySender
 
 
@@ -28,7 +27,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         if not hasattr(self, 'tid'):
             self.tid = None
         if app_name is not None:
-            self.consent = isip.isip_consent() == isip.ISIPConsent.APPROVED
+            self.consent = OptInChecker().check() & CFCheckResult.APPROVED
             # override default tid
             if tid is not None:
                 self.tid = tid

@@ -1,0 +1,54 @@
+# Copyright (C) 2018-2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+import sys
+from platform import system
+
+
+def print_without_end_line(string):
+    sys.stdout.write(string)
+    sys.stdout.flush()
+
+
+def input_with_timeout(prompt: str, timeout: int):
+    platform = system()
+    res_str = ''
+    if platform == 'Windows':
+        import msvcrt
+        import time
+
+        print_without_end_line(prompt)
+        start_time = time.monotonic()
+        end_time = start_time + timeout
+        sleep_time = 0.05
+
+        while time.monotonic() < end_time:
+            if msvcrt.kbhit():
+                c = msvcrt.getwche()
+                if c in ['\r', '\n']:
+                    print()
+                    return res_str
+                if c == '\003':
+                    raise KeyboardInterrupt
+                else:
+                    res_str += c
+            time.sleep(sleep_time)
+
+        print()
+        return ''
+
+    else:
+        import selectors
+
+        print_without_end_line(prompt)
+        with selectors.DefaultSelector() as selector:
+            selector.register(sys.stdin, selectors.EVENT_READ)
+            events = selector.select(timeout)
+
+            if events:
+                key, _ = events[0]
+                res_str = key.fileobj.readline().rstrip('\n')
+            else:
+                print()
+            selector.unregister(sys.stdin)
+        return res_str
