@@ -11,6 +11,12 @@ def print_without_end_line(string):
 
 
 def input_with_timeout(prompt: str, timeout: int):
+    """
+    Requests user input and waits until the timeout expired.
+    :param prompt: a string that will be printed on the screen.
+    :param timeout: timeout to wait.
+    :return: input string or empty line if the timeout expired.
+    """
     platform = system()
     res_str = ''
     if platform == 'Windows':

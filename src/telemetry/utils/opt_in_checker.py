@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Flag, auto
 from platform import system
 
-from telemetry.utils.input_with_timeout import input_with_timeout
+from .input_with_timeout import input_with_timeout
 
 
 class CFCheckResult(Flag):
@@ -34,6 +34,10 @@ class OptInChecker:
 
     @staticmethod
     def _ask_opt_in(question, timeout):
+        """
+        Runs input with timeout and checks user input.
+        :return: opt-in dialog result.
+        """
         print(question)
         answer = input_with_timeout(prompt='>>', timeout=timeout)
         answer = answer.lower()
@@ -44,6 +48,10 @@ class OptInChecker:
         return CFCheckResult.UNKNOWN
 
     def _opt_in_dialog(self):
+        """
+        Runs opt-in dialog until the timeout is expired.
+        :return: opt-in dialog result.
+        """
         start_time = time.time()
         answer = self._ask_opt_in(self.opt_in_question, self.dialog_timeout)
         time_passed = time.time() - start_time
@@ -55,7 +63,8 @@ class OptInChecker:
     @staticmethod
     def _control_file_base_dir():
         """
-        Returns the base directory with the control file.
+        Returns the base directory of the control file.
+        :return: base directory of the control file.
         """
         platform = system()
 
@@ -72,7 +81,11 @@ class OptInChecker:
         return os.path.expandvars(dir_to_check)
 
     @staticmethod
-    def _control_file_sub_directory():
+    def _control_file_subdirectory():
+        """
+        Returns control file subdirectory.
+        :return: control file subdirectory.
+        """
         platform = system()
         if platform == 'Windows':
             return 'Intel Corporation'
@@ -81,10 +94,18 @@ class OptInChecker:
         raise Exception('Failed to find location of the control file.')
 
     def _control_file(self):
-        return os.path.join(self._control_file_base_dir(), self._control_file_sub_directory(), "control_file.json")
+        """
+        Returns the control file path.
+        :return: control file path.
+        """
+        return os.path.join(self._control_file_base_dir(), self._control_file_subdirectory(), "control_file.json")
 
     def _create_new_cf_file(self):
-        cf_dir = os.path.join(self._control_file_base_dir(), self._control_file_sub_directory())
+        """
+        Creates a new control file.
+        :return: True if the file is created successfully, otherwise False
+        """
+        cf_dir = os.path.join(self._control_file_base_dir(), self._control_file_subdirectory())
         if not os.path.exists(cf_dir):
             if not os.access(self._control_file_base_dir(), os.W_OK):
                 return False
@@ -100,6 +121,10 @@ class OptInChecker:
         return True
 
     def _update_timestamp(self):
+        """
+        Updates the 'timestamp' value in the control file.
+        :return: False if the control file is not writable, otherwise True
+        """
         if not os.access(self._control_file(), os.W_OK):
             return False
         try:
@@ -113,6 +138,10 @@ class OptInChecker:
         return True
 
     def _update_result(self, result):
+        """
+        Updates the 'result' value in the control file.
+        :return: False if the control file is not writable, otherwise True
+        """
         if not os.access(self._control_file(), os.W_OK):
             return False
         try:
@@ -129,9 +158,18 @@ class OptInChecker:
         return True
 
     def _cf_is_empty(self):
+        """
+        Checks if the control file is empty.
+        :return: True if control file is empty, otherwise False.
+        """
         return os.stat(self._control_file()).st_size == 0
 
     def _get_info_from_cf(self):
+        """
+        Gets information from control file.
+        :return: the tuple, where the first element is True if the file is read successfully, otherwise False
+        and the second element is the content of the control file.
+        """
         if not os.access(self._control_file(), os.R_OK):
             return False
         try:
@@ -144,12 +182,22 @@ class OptInChecker:
         return True, content
 
     def _check_if_ask_period_is_passed(self, content):
+        """
+        Checks if asking period is passed.
+        :return: True if the period is passed, otherwise False
+        """
         if 'timestamp' not in content:
             return True
         delta = datetime.now() - datetime.fromtimestamp(content['timestamp'])
         return delta.days > self.asking_period
 
     def check(self):
+        """
+        Checks if user has accepted the collection of the information using a control file.
+        If the answer is unknown runs the opt-in dialog and updates the control file when the answer is obtained.
+        :return: bitmask with opt-in dialog result and information of whether the control file was updated and
+        whether the control file is not writable.
+        """
         if not os.path.exists(self._control_file()):
             if not self._create_new_cf_file():
                 return CFCheckResult.NO_WRITABLE
