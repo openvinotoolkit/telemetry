@@ -4,7 +4,7 @@
 import time
 import unittest
 
-from sender import TelemetrySender
+from .sender import TelemetrySender
 
 
 class FakeTelemetryBackend:
