@@ -3,11 +3,11 @@ on: [push, pull_request]
 
 jobs:
   Run_UT:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
 
       - name: git ls-tree
         run: |
-          python -m unittest discover -p "*_test.py" src
+          python3 -m unittest discover -p "*_test.py" src
 
