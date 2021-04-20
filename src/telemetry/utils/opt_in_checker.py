@@ -113,9 +113,7 @@ class OptInChecker:
         if not os.access(cf_dir, os.W_OK):
             return False
         try:
-            with open(self._control_file(), 'w') as file:
-                if not file.writable():
-                    return False
+            open(self._control_file(), 'w').close()
         except Exception:
             return False
         return True
@@ -129,8 +127,6 @@ class OptInChecker:
             return False
         try:
             with open(self._control_file(), 'w') as file:
-                if not file.writable():
-                    return False
                 content = {'timestamp': datetime.now().timestamp()}
                 json.dump(content, file)
         except Exception:
@@ -146,8 +142,6 @@ class OptInChecker:
             return False
         try:
             with open(self._control_file(), 'w') as file:
-                if not file.writable():
-                    return False
                 if result & CFCheckResult.APPROVED:
                     content = {'result': 1}
                 else:
@@ -174,8 +168,6 @@ class OptInChecker:
             return False
         try:
             with open(self._control_file(), 'r') as file:
-                if not file.readable():
-                    return False, {}
                 content = json.load(file)
         except Exception:
             return False, {}
