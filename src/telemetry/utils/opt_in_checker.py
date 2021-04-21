@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import IntEnum
 from platform import system
 
-from .input_with_timeout import input_with_timeout
+from telemetry.utils.input_with_timeout import input_with_timeout
 
 
 class CFCheckResult(IntEnum):
@@ -63,7 +63,7 @@ class OptInChecker:
         return answer
 
     @staticmethod
-    def _control_file_base_dir():
+    def control_file_base_dir():
         """
         Returns the base directory of the control file.
         :return: base directory of the control file.
@@ -100,16 +100,16 @@ class OptInChecker:
         Returns the control file path.
         :return: control file path.
         """
-        return os.path.join(self._control_file_base_dir(), self._control_file_subdirectory(), "openvino_telemetry.json")
+        return os.path.join(self.control_file_base_dir(), self._control_file_subdirectory(), "openvino_telemetry.json")
 
     def _create_new_cf_file(self):
         """
         Creates a new control file.
         :return: True if the file is created successfully, otherwise False
         """
-        cf_dir = os.path.join(self._control_file_base_dir(), self._control_file_subdirectory())
+        cf_dir = os.path.join(self.control_file_base_dir(), self._control_file_subdirectory())
         if not os.path.exists(cf_dir):
-            if not os.access(self._control_file_base_dir(), os.W_OK):
+            if not os.access(self.control_file_base_dir(), os.W_OK):
                 return False
             os.mkdir(cf_dir)
         if not os.access(cf_dir, os.W_OK):
@@ -122,7 +122,7 @@ class OptInChecker:
 
     def _update_timestamp(self):
         """
-        Updates modification time attribute of the control file.
+        Updates the 'timestamp' value in the control file.
         :return: False if the control file is not writable, otherwise True
         """
         if not os.access(self._control_file(), os.W_OK):
