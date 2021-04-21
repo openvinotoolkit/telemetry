@@ -40,13 +40,15 @@ def input_with_timeout(prompt: str, timeout: int):
                     return res_str
                 if c == '\003':
                     raise KeyboardInterrupt
+                if c == '\b':
+                    res_str = res_str[:-1]
+                    print_without_end_line(''.join(['\r', ' ' * len(prompt + res_str + ' '), '\r', prompt, res_str]))
                 else:
                     res_str += c
             time.sleep(sleep_time)
 
         print()
         return ''
-
     else:
         import selectors
 

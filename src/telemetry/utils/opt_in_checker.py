@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import IntEnum
 from platform import system
 
-from telemetry.utils.input_with_timeout import input_with_timeout
+from .input_with_timeout import input_with_timeout
 
 
 class CFCheckResult(IntEnum):
@@ -132,7 +132,7 @@ class OptInChecker:
 
     def _update_result(self, result: CFCheckResult):
         """
-        Updates the 'result' value in the control file.
+        Updates the 'opt_in' value in the control file.
         :param result: opt-in dialog result.
         :return: False if the control file is not writable, otherwise True
         """
@@ -141,9 +141,9 @@ class OptInChecker:
         try:
             with open(self._control_file(), 'w') as file:
                 if result & CFCheckResult.APPROVED:
-                    content = {'result': 1}
+                    content = {'opt_in': 1}
                 else:
-                    content = {'result': 0}
+                    content = {'opt_in': 0}
                 json.dump(content, file)
         except Exception:
             return False
@@ -157,7 +157,7 @@ class OptInChecker:
         if os.stat(self._control_file()).st_size == 0:
             return True
         _, content = self._get_info_from_cf()
-        return 'result' not in content
+        return 'opt_in' not in content
 
     def _get_info_from_cf(self):
         """
@@ -176,8 +176,8 @@ class OptInChecker:
 
     def _check_if_ask_period_is_passed(self):
         """
-        Checks if asking period is passed.
-        :return: True if the period is passed, otherwise False
+        Checks if asking period has passed.
+        :return: True if the period has passed, otherwise False
         """
         delta = datetime.now() - datetime.fromtimestamp(os.path.getmtime(self._control_file()))
         return delta.days > self.asking_period
@@ -195,9 +195,9 @@ class OptInChecker:
         else:
             if not self._cf_is_empty():
                 _, content = self._get_info_from_cf()
-                if content['result'] == 1:
+                if content['opt_in'] == 1:
                     return CFCheckResult.APPROVED | CFCheckResult.CF_HAS_RESULT
-                elif content['result'] == 0:
+                elif content['opt_in'] == 0:
                     return CFCheckResult.CF_HAS_RESULT
                 else:
                     raise Exception('Incorrect format of control file.')
