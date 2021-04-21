@@ -5,18 +5,18 @@ import json
 import os
 import time
 from datetime import datetime
-from enum import Flag, auto
+from enum import IntEnum
 from platform import system
 
 from .input_with_timeout import input_with_timeout
 
 
-class CFCheckResult(Flag):
+class CFCheckResult(IntEnum):
     UNKNOWN = 0
-    CF_HAS_RESULT = auto()
-    APPROVED = auto()
-    UPDATED = auto()
-    NO_WRITABLE = auto()
+    CF_HAS_RESULT = 1
+    APPROVED = 2
+    UPDATED = 4
+    NO_WRITABLE = 8
 
 
 class OptInChecker:
@@ -33,9 +33,11 @@ class OptInChecker:
     or "N" if you do NOT consent to the collection of your information)"""
 
     @staticmethod
-    def _ask_opt_in(question, timeout):
+    def _ask_opt_in(question: str, timeout: int):
         """
         Runs input with timeout and checks user input.
+        :param question: question that will be printed on the screen.
+        :param timeout: timeout to wait.
         :return: opt-in dialog result.
         """
         print(question)
@@ -98,7 +100,7 @@ class OptInChecker:
         Returns the control file path.
         :return: control file path.
         """
-        return os.path.join(self._control_file_base_dir(), self._control_file_subdirectory(), "control_file.json")
+        return os.path.join(self._control_file_base_dir(), self._control_file_subdirectory(), "openvino_telemetry.json")
 
     def _create_new_cf_file(self):
         """
@@ -120,22 +122,18 @@ class OptInChecker:
 
     def _update_timestamp(self):
         """
-        Updates the 'timestamp' value in the control file.
+        Updates modification time attribute of the control file.
         :return: False if the control file is not writable, otherwise True
         """
         if not os.access(self._control_file(), os.W_OK):
             return False
-        try:
-            with open(self._control_file(), 'w') as file:
-                content = {'timestamp': datetime.now().timestamp()}
-                json.dump(content, file)
-        except Exception:
-            return False
+        os.utime(self._control_file(), (datetime.now().timestamp(), datetime.now().timestamp()))
         return True
 
-    def _update_result(self, result):
+    def _update_result(self, result: CFCheckResult):
         """
         Updates the 'result' value in the control file.
+        :param result: opt-in dialog result.
         :return: False if the control file is not writable, otherwise True
         """
         if not os.access(self._control_file(), os.W_OK):
@@ -156,7 +154,10 @@ class OptInChecker:
         Checks if the control file is empty.
         :return: True if control file is empty, otherwise False.
         """
-        return os.stat(self._control_file()).st_size == 0
+        if os.stat(self._control_file()).st_size == 0:
+            return True
+        _, content = self._get_info_from_cf()
+        return 'result' not in content
 
     def _get_info_from_cf(self):
         """
@@ -165,7 +166,7 @@ class OptInChecker:
         and the second element is the content of the control file.
         """
         if not os.access(self._control_file(), os.R_OK):
-            return False
+            return False, {}
         try:
             with open(self._control_file(), 'r') as file:
                 content = json.load(file)
@@ -173,14 +174,12 @@ class OptInChecker:
             return False, {}
         return True, content
 
-    def _check_if_ask_period_is_passed(self, content):
+    def _check_if_ask_period_is_passed(self):
         """
         Checks if asking period is passed.
         :return: True if the period is passed, otherwise False
         """
-        if 'timestamp' not in content:
-            return True
-        delta = datetime.now() - datetime.fromtimestamp(content['timestamp'])
+        delta = datetime.now() - datetime.fromtimestamp(os.path.getmtime(self._control_file()))
         return delta.days > self.asking_period
 
     def check(self):
@@ -193,12 +192,9 @@ class OptInChecker:
         if not os.path.exists(self._control_file()):
             if not self._create_new_cf_file():
                 return CFCheckResult.NO_WRITABLE
-
-        if not self._cf_is_empty():
-            readable, content = self._get_info_from_cf()
-            if not readable:
-                return CFCheckResult.UNKNOWN
-            if 'result' in content:
+        else:
+            if not self._cf_is_empty():
+                _, content = self._get_info_from_cf()
                 if content['result'] == 1:
                     return CFCheckResult.APPROVED | CFCheckResult.CF_HAS_RESULT
                 elif content['result'] == 0:
@@ -206,7 +202,7 @@ class OptInChecker:
                 else:
                     raise Exception('Incorrect format of control file.')
             else:
-                if not self._check_if_ask_period_is_passed(content):
+                if not self._check_if_ask_period_is_passed():
                     return CFCheckResult.UNKNOWN
 
         if not self._update_timestamp():

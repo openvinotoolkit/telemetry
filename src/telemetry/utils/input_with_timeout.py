@@ -5,7 +5,11 @@ import sys
 from platform import system
 
 
-def print_without_end_line(string):
+def print_without_end_line(string: str):
+    """
+    Prints a string without end line.
+    :param string: a string that will be printed on the screen.
+    """
     sys.stdout.write(string)
     sys.stdout.flush()
 
