@@ -9,5 +9,5 @@ jobs:
 
       - name: git ls-tree
         run: |
-          python3 -m unittest discover -p "*_test.py" src
+          python3 -m unittest discover -p "*_test.py" ./
 

@@ -22,7 +22,7 @@ class BuildCmd(build_py):
         ]
 
 
-packages = ['openvino.telemetry', 'openvino.telemetry.backend', 'openvino.telemetry.utils']
+packages = ['openvino_telemetry', 'openvino_telemetry.backend', 'openvino_telemetry.utils']
 
 
 setup(name='openvino-telemetry',
@@ -31,7 +31,7 @@ setup(name='openvino-telemetry',
       author_email='openvino_pushbot@intel.com',
       url='https://github.com/openvinotoolkit/telemetry',
       packages=packages,
-      package_dir={'openvino': 'src'},
+      package_dir={'openvino_telemetry': 'src'},
       py_modules=[],
       cmdclass={
           'build_py': BuildCmd,
