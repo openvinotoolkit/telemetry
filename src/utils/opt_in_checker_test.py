@@ -7,9 +7,9 @@ import os
 import unittest
 from datetime import datetime, timedelta
 from platform import system
+from unittest.mock import MagicMock
 
 from .opt_in_checker import OptInChecker, CFCheckResult
-from unittest.mock import MagicMock
 
 
 class OptInCheckerTest(unittest.TestCase):

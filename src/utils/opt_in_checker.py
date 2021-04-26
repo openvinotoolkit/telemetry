@@ -23,7 +23,7 @@ class OptInChecker:
     dialog_timeout = 60  # seconds
     asking_period = 14  # days
     opt_in_question = """To improve our software and customer experience, Intel would like to collect technical 
-    information abjjout your software installation and runtime status (such as metrics, software SKU/serial, counters, 
+    information about your software installation and runtime status (such as metrics, software SKU/serial, counters, 
     flags and timestamps), and development environment (such as operating system, CPU architecture, last 4-digits of
     the MAC address, 3rd party API usage and other Intel products installed). Information that cannot be linked to 
     an identifiable person may be retained by Intel as long as it is necessary to support the software. You can revoke
