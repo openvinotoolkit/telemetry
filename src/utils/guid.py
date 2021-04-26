@@ -61,4 +61,4 @@ def get_uid_path():
     if subdir is None:
         raise Exception('Failed to determine the operation system type')
 
-    return os.path.join(OptInChecker.control_file_base_dir(), subdir)
+    return os.path.join(OptInChecker().get_control_file_base_dir(), subdir)

@@ -14,7 +14,7 @@ def print_without_end_line(string: str):
     sys.stdout.flush()
 
 
-def input_with_timeout(prompt: str, timeout: int):
+def input_with_timeout(prompt: str, timeout: float):
     """
     Requests user input and waits until the timeout expired.
     :param prompt: a string that will be printed on the screen.
