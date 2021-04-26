@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from platform import system
 
 from .opt_in_checker import OptInChecker, CFCheckResult
+from unittest.mock import MagicMock
 
 
 class OptInCheckerTest(unittest.TestCase):
@@ -17,9 +18,8 @@ class OptInCheckerTest(unittest.TestCase):
     test_subdir = 'test_opt_in_subdir'
 
     def init_opt_in_checker(self):
-        self.opt_in_checker.set_control_file_base_dir(self.test_directory)
-        self.opt_in_checker.set_control_file_subdirectory(self.test_subdir)
-        self.opt_in_checker.set_timeout(0)
+        self.opt_in_checker.control_file_base_dir = MagicMock(return_value=self.test_directory)
+        self.opt_in_checker._control_file_subdirectory = MagicMock(return_value=self.test_subdir)
         if not os.path.exists(self.test_directory):
             os.mkdir(os.path.join(self.test_directory))
         test_subdir = os.path.join(self.test_directory, self.test_subdir)

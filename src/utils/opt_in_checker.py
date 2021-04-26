@@ -23,7 +23,7 @@ class OptInChecker:
     dialog_timeout = 60  # seconds
     asking_period = 14  # days
     opt_in_question = """To improve our software and customer experience, Intel would like to collect technical 
-    information about your software installation and runtime status (such as metrics, software SKU/serial, counters, 
+    information abjjout your software installation and runtime status (such as metrics, software SKU/serial, counters, 
     flags and timestamps), and development environment (such as operating system, CPU architecture, last 4-digits of
     the MAC address, 3rd party API usage and other Intel products installed). Information that cannot be linked to 
     an identifiable person may be retained by Intel as long as it is necessary to support the software. You can revoke
@@ -31,11 +31,9 @@ class OptInChecker:
     your information or "N" if you do NOT consent to the collection of your information)"""
     opt_in_question_incorrect_input = """DO YOU ACCEPT? ("Y" if you consent to the collection of your information 
     or "N" if you do NOT consent to the collection of your information)"""
-    control_file_base_dir = None
-    control_file_subdirectory = None
 
     @staticmethod
-    def _ask_opt_in(question: str, timeout: float):
+    def _ask_opt_in(question: str, timeout: int):
         """
         Runs input with timeout and checks user input.
         :param question: question that will be printed on the screen.
@@ -64,14 +62,12 @@ class OptInChecker:
             time_passed = time.time() - start_time
         return answer
 
-    def get_control_file_base_dir(self):
+    @staticmethod
+    def control_file_base_dir():
         """
         Returns the base directory of the control file.
         :return: base directory of the control file.
         """
-        if self.control_file_base_dir is not None:
-            return self.control_file_base_dir
-
         platform = system()
 
         dir_to_check = None
@@ -86,21 +82,12 @@ class OptInChecker:
 
         return os.path.expandvars(dir_to_check)
 
-    def set_control_file_base_dir(self, path: str):
-        """
-        Sets control file base directory.
-        :param path: path to control file subdirectory.
-        """
-        self.control_file_base_dir = path
-
-    def get_control_file_subdirectory(self):
+    @staticmethod
+    def _control_file_subdirectory():
         """
         Returns control file subdirectory.
         :return: control file subdirectory.
         """
-        if self.control_file_subdirectory is not None:
-            return self.control_file_subdirectory
-
         platform = system()
         if platform == 'Windows':
             return 'Intel Corporation'
@@ -108,32 +95,21 @@ class OptInChecker:
             return 'intel'
         raise Exception('Failed to find location of the control file.')
 
-    def set_control_file_subdirectory(self, path: str):
-        """
-        Sets control file subdirectory.
-        :param path: path to control file subdirectory.
-        """
-        self.control_file_subdirectory = path
-
-    def set_timeout(self, timeout: float):
-        self.dialog_timeout = timeout
-
     def _control_file(self):
         """
         Returns the control file path.
         :return: control file path.
         """
-        return os.path.join(self.get_control_file_base_dir(), self.get_control_file_subdirectory(),
-                            "openvino_telemetry.json")
+        return os.path.join(self.control_file_base_dir(), self._control_file_subdirectory(), "openvino_telemetry.json")
 
     def _create_new_cf_file(self):
         """
         Creates a new control file.
         :return: True if the file is created successfully, otherwise False
         """
-        cf_dir = os.path.join(self.get_control_file_base_dir(), self.get_control_file_subdirectory())
+        cf_dir = os.path.join(self.control_file_base_dir(), self._control_file_subdirectory())
         if not os.path.exists(cf_dir):
-            if not os.access(self.get_control_file_base_dir(), os.W_OK):
+            if not os.access(self.control_file_base_dir(), os.W_OK):
                 return False
             os.mkdir(cf_dir)
         if not os.access(cf_dir, os.W_OK):
