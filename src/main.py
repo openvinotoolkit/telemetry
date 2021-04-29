@@ -85,8 +85,8 @@ class Telemetry(metaclass=SingletonMetaClass):
 
     def send_error(self, category: str, error_msg: str, **kwargs):
         if self.consent:
-            pass
+            self.sender.send(self.backend, self.backend.build_error_message(category, error_msg, **kwargs))
 
     def send_stack_trace(self, category: str, stack_trace: str, **kwargs):
         if self.consent:
-            pass
+            self.sender.send(self.backend, self.backend.build_stack_trace_message(category, stack_trace, **kwargs))

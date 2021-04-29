@@ -73,10 +73,26 @@ class GABackend(TelemetryBackend):
         return Message(MessageType.SESSION_END, data)
 
     def build_error_message(self, category: str, error_msg: str, **kwargs):
-        pass
+        data = self.default_message_attrs.copy()
+        data.update({
+            't': 'event',
+            'ec': category,
+            'ea': 'error',
+            'el': error_msg,
+            'ev': 1,
+        })
+        return Message(MessageType.ERROR, data)
 
     def build_stack_trace_message(self, category: str, error_msg: str, **kwargs):
-        pass
+        data = self.default_message_attrs.copy()
+        data.update({
+            't': 'event',
+            'ec': category,
+            'ea': 'stack_trace',
+            'el': error_msg,
+            'ev': 1,
+        })
+        return Message(MessageType.STACK_TRACE, data)
 
 
 def is_valid_uuid4(uid: str):
