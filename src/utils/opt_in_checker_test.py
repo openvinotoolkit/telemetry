@@ -19,7 +19,7 @@ class OptInCheckerTest(unittest.TestCase):
 
     def init_opt_in_checker(self):
         self.opt_in_checker.control_file_base_dir = MagicMock(return_value=self.test_directory)
-        self.opt_in_checker._control_file_subdirectory = MagicMock(return_value=self.test_subdir)
+        self.opt_in_checker.control_file_subdirectory = MagicMock(return_value=self.test_subdir)
         if not os.path.exists(self.test_directory):
             os.mkdir(os.path.join(self.test_directory))
         test_subdir = os.path.join(self.test_directory, self.test_subdir)
@@ -28,8 +28,8 @@ class OptInCheckerTest(unittest.TestCase):
 
     def remove_test_subdir(self):
         test_subdir = os.path.join(self.test_directory, self.test_subdir)
-        if os.path.exists(self.opt_in_checker._control_file()):
-            os.remove(self.opt_in_checker._control_file())
+        if os.path.exists(self.opt_in_checker.control_file()):
+            os.remove(self.opt_in_checker.control_file())
         if os.path.exists(test_subdir):
             os.rmdir(test_subdir)
         if os.path.exists(self.test_directory):
@@ -79,7 +79,7 @@ class OptInCheckerTest(unittest.TestCase):
 
     def test_incorrect_control_file_format(self):
         self.init_opt_in_checker()
-        with open(self.opt_in_checker._control_file(), 'w') as file:
+        with open(self.opt_in_checker.control_file(), 'w') as file:
             file.write("{ abc")
         result = self.opt_in_checker.check()
         self.assertTrue(result == CFCheckResult.UNKNOWN)
@@ -87,7 +87,7 @@ class OptInCheckerTest(unittest.TestCase):
 
     def test_incorrect_result_value(self):
         self.init_opt_in_checker()
-        with open(self.opt_in_checker._control_file(), 'w') as file:
+        with open(self.opt_in_checker.control_file(), 'w') as file:
             content = {'opt_in': 312}
             json.dump(content, file)
         try:
@@ -100,14 +100,14 @@ class OptInCheckerTest(unittest.TestCase):
     def test_cf_no_writable(self):
         self.init_opt_in_checker()
 
-        open(self.opt_in_checker._control_file(), 'w').close()
+        open(self.opt_in_checker.control_file(), 'w').close()
         update_date = datetime.fromtimestamp(datetime.now().timestamp()) - timedelta(
             days=self.opt_in_checker.asking_period + 1)
-        os.utime(self.opt_in_checker._control_file(), (update_date.timestamp(), update_date.timestamp()))
-        os.chmod(self.opt_in_checker._control_file(), 0o444)
+        os.utime(self.opt_in_checker.control_file(), (update_date.timestamp(), update_date.timestamp()))
+        os.chmod(self.opt_in_checker.control_file(), 0o444)
 
         result = self.opt_in_checker.check()
         self.assertTrue(result == CFCheckResult.NO_WRITABLE)
 
-        os.chmod(self.opt_in_checker._control_file(), 0o777)
+        os.chmod(self.opt_in_checker.control_file(), 0o777)
         self.remove_test_subdir()

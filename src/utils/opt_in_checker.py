@@ -15,20 +15,24 @@ class CFCheckResult(IntEnum):
     UNKNOWN = 0
     CF_HAS_RESULT = 1
     APPROVED = 2
-    UPDATED = 4
+    DIALOG_WAS_STARTED = 4
     NO_WRITABLE = 8
 
 
 class OptInChecker:
     dialog_timeout = 60  # seconds
     asking_period = 14  # days
-    opt_in_question = """To improve our software and customer experience, Intel would like to collect technical 
-    information about your software installation and runtime status (such as metrics, software SKU/serial, counters, 
-    flags and timestamps), and development environment (such as operating system, CPU architecture, last 4-digits of
-    the MAC address, 3rd party API usage and other Intel products installed). Information that cannot be linked to 
-    an identifiable person may be retained by Intel as long as it is necessary to support the software. You can revoke
-    your consent at any time by running opt_in_out.py script. DO YOU ACCEPT? ("Y" if you consent to the collection of 
-    your information or "N" if you do NOT consent to the collection of your information)"""
+    path_to_opt_in_out_script = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+                                             "opt_in_out.py")
+    opt_in_question = "To improve our software and customer experience, Intel would like to collect technical" \
+                      "information about your software installation and runtime status (such as metrics, " \
+                      "software SKU/serial, counters, flags and timestamps), and development environment " \
+                      "(such as operating system, CPU architecture, last 4-digits of the MAC address, " \
+                      "3rd party API usage and other Intel products installed). Information that cannot be linked to" \
+                      "an identifiable person may be retained by Intel as long as it is necessary to support the " \
+                      "software. You can revoke your consent at any time by running {}. DO YOU ACCEPT? " \
+                      "(\"Y\" if you consent to the collection of your information or \"N\" if you do NOT " \
+                      "consent to the collection of your information)".format(path_to_opt_in_out_script)
     opt_in_question_incorrect_input = """DO YOU ACCEPT? ("Y" if you consent to the collection of your information 
     or "N" if you do NOT consent to the collection of your information)"""
 
@@ -44,9 +48,9 @@ class OptInChecker:
         answer = input_with_timeout(prompt='>>', timeout=timeout)
         answer = answer.lower()
         if answer == "n" or answer == "no":
-            return CFCheckResult.UPDATED
+            return CFCheckResult.CF_HAS_RESULT
         if answer == "y" or answer == "yes":
-            return CFCheckResult.APPROVED | CFCheckResult.UPDATED
+            return CFCheckResult.APPROVED | CFCheckResult.CF_HAS_RESULT
         return CFCheckResult.UNKNOWN
 
     def _opt_in_dialog(self):
@@ -83,7 +87,7 @@ class OptInChecker:
         return os.path.expandvars(dir_to_check)
 
     @staticmethod
-    def _control_file_subdirectory():
+    def control_file_subdirectory():
         """
         Returns control file subdirectory.
         :return: control file subdirectory.
@@ -95,19 +99,19 @@ class OptInChecker:
             return 'intel'
         raise Exception('Failed to find location of the control file.')
 
-    def _control_file(self):
+    def control_file(self):
         """
         Returns the control file path.
         :return: control file path.
         """
-        return os.path.join(self.control_file_base_dir(), self._control_file_subdirectory(), "openvino_telemetry.json")
+        return os.path.join(self.control_file_base_dir(), self.control_file_subdirectory(), "openvino_telemetry.json")
 
-    def _create_new_cf_file(self):
+    def create_new_cf_file(self):
         """
         Creates a new control file.
         :return: True if the file is created successfully, otherwise False
         """
-        cf_dir = os.path.join(self.control_file_base_dir(), self._control_file_subdirectory())
+        cf_dir = os.path.join(self.control_file_base_dir(), self.control_file_subdirectory())
         if not os.path.exists(cf_dir):
             if not os.access(self.control_file_base_dir(), os.W_OK):
                 return False
@@ -115,7 +119,7 @@ class OptInChecker:
         if not os.access(cf_dir, os.W_OK):
             return False
         try:
-            open(self._control_file(), 'w').close()
+            open(self.control_file(), 'w').close()
         except Exception:
             return False
         return True
@@ -125,21 +129,21 @@ class OptInChecker:
         Updates the 'timestamp' value in the control file.
         :return: False if the control file is not writable, otherwise True
         """
-        if not os.access(self._control_file(), os.W_OK):
+        if not os.access(self.control_file(), os.W_OK):
             return False
-        os.utime(self._control_file(), (datetime.now().timestamp(), datetime.now().timestamp()))
+        os.utime(self.control_file(), (datetime.now().timestamp(), datetime.now().timestamp()))
         return True
 
-    def _update_result(self, result: CFCheckResult):
+    def update_result(self, result: CFCheckResult):
         """
         Updates the 'opt_in' value in the control file.
         :param result: opt-in dialog result.
         :return: False if the control file is not writable, otherwise True
         """
-        if not os.access(self._control_file(), os.W_OK):
+        if not os.access(self.control_file(), os.W_OK):
             return False
         try:
-            with open(self._control_file(), 'w') as file:
+            with open(self.control_file(), 'w') as file:
                 if result & CFCheckResult.APPROVED:
                     content = {'opt_in': 1}
                 else:
@@ -149,12 +153,12 @@ class OptInChecker:
             return False
         return True
 
-    def _cf_is_empty(self):
+    def cf_is_empty(self):
         """
         Checks if the control file is empty.
         :return: True if control file is empty, otherwise False.
         """
-        if os.stat(self._control_file()).st_size == 0:
+        if os.stat(self.control_file()).st_size == 0:
             return True
         _, content = self._get_info_from_cf()
         return 'opt_in' not in content
@@ -165,21 +169,21 @@ class OptInChecker:
         :return: the tuple, where the first element is True if the file is read successfully, otherwise False
         and the second element is the content of the control file.
         """
-        if not os.access(self._control_file(), os.R_OK):
+        if not os.access(self.control_file(), os.R_OK):
             return False, {}
         try:
-            with open(self._control_file(), 'r') as file:
+            with open(self.control_file(), 'r') as file:
                 content = json.load(file)
         except Exception:
             return False, {}
         return True, content
 
-    def _check_if_ask_period_is_passed(self):
+    def check_if_ask_period_is_passed(self):
         """
         Checks if asking period has passed.
         :return: True if the period has passed, otherwise False
         """
-        delta = datetime.now() - datetime.fromtimestamp(os.path.getmtime(self._control_file()))
+        delta = datetime.now() - datetime.fromtimestamp(os.path.getmtime(self.control_file()))
         return delta.days > self.asking_period
 
     def check(self):
@@ -189,11 +193,11 @@ class OptInChecker:
         :return: bitmask with opt-in dialog result and information of whether the control file was updated and
         whether the control file is not writable.
         """
-        if not os.path.exists(self._control_file()):
-            if not self._create_new_cf_file():
+        if not os.path.exists(self.control_file()):
+            if not self.create_new_cf_file():
                 return CFCheckResult.NO_WRITABLE
         else:
-            if not self._cf_is_empty():
+            if not self.cf_is_empty():
                 _, content = self._get_info_from_cf()
                 if content['opt_in'] == 1:
                     return CFCheckResult.APPROVED | CFCheckResult.CF_HAS_RESULT
@@ -202,7 +206,7 @@ class OptInChecker:
                 else:
                     raise Exception('Incorrect format of control file.')
             else:
-                if not self._check_if_ask_period_is_passed():
+                if not self.check_if_ask_period_is_passed():
                     return CFCheckResult.UNKNOWN
 
         if not self._update_timestamp():
@@ -211,8 +215,8 @@ class OptInChecker:
         try:
             answer = self._opt_in_dialog()
         except KeyboardInterrupt:
-            return CFCheckResult.UNKNOWN
-        if answer & CFCheckResult.UPDATED:
-            self._update_result(answer)
-            answer = answer | CFCheckResult.CF_HAS_RESULT
+            return CFCheckResult.UNKNOWN | CFCheckResult.DIALOG_WAS_STARTED
+        if answer & CFCheckResult.CF_HAS_RESULT:
+            self.update_result(answer)
+        answer = answer | CFCheckResult.DIALOG_WAS_STARTED
         return answer

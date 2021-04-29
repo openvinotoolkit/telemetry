@@ -27,12 +27,23 @@ class Telemetry(metaclass=SingletonMetaClass):
         if not hasattr(self, 'tid'):
             self.tid = None
         if app_name is not None:
-            self.consent = OptInChecker().check() & CFCheckResult.APPROVED
+            opt_in_check_result = OptInChecker().check()
+            self.consent = opt_in_check_result & CFCheckResult.APPROVED
             # override default tid
             if tid is not None:
                 self.tid = tid
             self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
             self.sender = TelemetrySender()
+            if opt_in_check_result & CFCheckResult.DIALOG_WAS_STARTED:
+                if opt_in_check_result & CFCheckResult.APPROVED:
+                    result_msg = "accepted"
+                elif opt_in_check_result & CFCheckResult.CF_HAS_RESULT:
+                    result_msg = "declined"
+                else:
+                    result_msg = "no_answer"
+                self.send_event("mo", "opt_in", result_msg, force_send=True)
+            if opt_in_check_result & CFCheckResult.NO_WRITABLE:
+                self.send_event("mo", "opt_in", "no_writable", force_send=True)
         else:  # use already configured instance
             assert self.sender is not None, 'The first instantiation of the Telemetry should be done with the ' \
                                             'application name and version'
@@ -46,7 +57,8 @@ class Telemetry(metaclass=SingletonMetaClass):
         """
         self.sender.force_shutdown(timeout)
 
-    def send_event(self, event_category: str, event_action: str, event_label: str, event_value: int = 1, **kwargs):
+    def send_event(self, event_category: str, event_action: str, event_label: str, event_value: int = 1,
+                   force_send=False, **kwargs):
         """
         Send single event.
 
@@ -54,10 +66,11 @@ class Telemetry(metaclass=SingletonMetaClass):
         :param event_action: action of the event
         :param event_label: the label associated with the action
         :param event_value: the integer value corresponding to this label
+        :param force_send: forces to send event ignoring the consent value
         :param kwargs: additional parameters
         :return: None
         """
-        if self.consent:
+        if self.consent or force_send:
             self.sender.send(self.backend, self.backend.build_event_message(event_category, event_action, event_label,
                                                                             event_value, **kwargs))
 
