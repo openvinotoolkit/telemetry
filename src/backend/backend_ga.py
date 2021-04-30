@@ -48,35 +48,51 @@ class GABackend(TelemetryBackend):
         })
         return Message(MessageType.EVENT, data)
 
-    def build_session_start_message(self, **kwargs):
+    def build_session_start_message(self, category: str, **kwargs):
         data = self.default_message_attrs.copy()
         data.update({
             'sc': 'start',
             't': 'event',
-            'ec': 'session',
-            'ea': 'control',
+            'ec': category,
+            'ea': 'session',
             'el': 'start',
             'ev': 1,
         })
         return Message(MessageType.SESSION_START, data)
 
-    def build_session_end_message(self, **kwargs):
+    def build_session_end_message(self, category: str, **kwargs):
         data = self.default_message_attrs.copy()
         data.update({
             'sc': 'end',
             't': 'event',
-            'ec': 'session',
-            'ea': 'control',
+            'ec': category,
+            'ea': 'session',
             'el': 'end',
             'ev': 1,
         })
         return Message(MessageType.SESSION_END, data)
 
-    def build_error_message(self, error_msg: str, **kwargs):
-        pass
+    def build_error_message(self, category: str, error_msg: str, **kwargs):
+        data = self.default_message_attrs.copy()
+        data.update({
+            't': 'event',
+            'ec': category,
+            'ea': 'error',
+            'el': error_msg,
+            'ev': 1,
+        })
+        return Message(MessageType.ERROR, data)
 
-    def build_stack_trace_message(self, error_msg: str, **kwargs):
-        pass
+    def build_stack_trace_message(self, category: str, error_msg: str, **kwargs):
+        data = self.default_message_attrs.copy()
+        data.update({
+            't': 'event',
+            'ec': category,
+            'ea': 'stack_trace',
+            'el': error_msg,
+            'ev': 1,
+        })
+        return Message(MessageType.STACK_TRACE, data)
 
 
 def is_valid_uuid4(uid: str):

@@ -61,30 +61,32 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.sender.send(self.backend, self.backend.build_event_message(event_category, event_action, event_label,
                                                                             event_value, **kwargs))
 
-    def start_session(self, **kwargs):
+    def start_session(self, category: str, **kwargs):
         """
         Sends a message about starting of a new session.
 
         :param kwargs: additional parameters
+        :param category: the application code
         :return: None
         """
         if self.consent:
-            self.sender.send(self.backend, self.backend.build_session_start_message(**kwargs))
+            self.sender.send(self.backend, self.backend.build_session_start_message(category, **kwargs))
 
-    def end_session(self, **kwargs):
+    def end_session(self, category: str, **kwargs):
         """
         Sends a message about ending of the current session.
 
         :param kwargs: additional parameters
+        :param category: the application code
         :return: None
         """
         if self.consent:
-            self.sender.send(self.backend, self.backend.build_session_end_message(**kwargs))
+            self.sender.send(self.backend, self.backend.build_session_end_message(category, **kwargs))
 
-    def send_error(self, error_msg: str, **kwargs):
+    def send_error(self, category: str, error_msg: str, **kwargs):
         if self.consent:
-            pass
+            self.sender.send(self.backend, self.backend.build_error_message(category, error_msg, **kwargs))
 
-    def send_stack_trace(self, stack_trace: str, **kwargs):
+    def send_stack_trace(self, category: str, stack_trace: str, **kwargs):
         if self.consent:
-            pass
+            self.sender.send(self.backend, self.backend.build_stack_trace_message(category, stack_trace, **kwargs))

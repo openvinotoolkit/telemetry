@@ -57,25 +57,25 @@ class TelemetryBackend(metaclass=TelemetryBackendMetaClass):
         """
 
     @abc.abstractmethod
-    def build_error_message(self, error_msg: str, **kwargs):
+    def build_error_message(self, category: str, error_msg: str, **kwargs):
         """
         Should return the Message object build from the error message.
         """
 
     @abc.abstractmethod
-    def build_stack_trace_message(self, error_msg: str, **kwargs):
+    def build_stack_trace_message(self, category: str, error_msg: str, **kwargs):
         """
         Should return the Message object build from the stack trace message.
         """
 
     @abc.abstractmethod
-    def build_session_start_message(self, **kwargs):
+    def build_session_start_message(self, category: str, **kwargs):
         """
         Should return the Message object corresponding to the session start.
         """
 
     @abc.abstractmethod
-    def build_session_end_message(self, **kwargs):
+    def build_session_end_message(self, category: str, **kwargs):
         """
         Should return the Message object corresponding to the session end.
         """
