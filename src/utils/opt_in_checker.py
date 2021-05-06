@@ -184,6 +184,27 @@ class OptInChecker:
         delta = datetime.now() - datetime.fromtimestamp(os.path.getmtime(self.control_file()))
         return delta.days > self.asking_period
 
+    @staticmethod
+    def _check_input_is_terminal():
+        """
+        Checks if stdin is terminal.
+        :return: True if stdin is terminal, otherwise False
+        """
+        return stdin.isatty()
+
+    @staticmethod
+    def _check_run_in_notebook():
+        """
+        Checks that script is run in notebook.
+        :return: True script is run in notebook, otherwise False
+        """
+        try:
+            shell = get_ipython().__class__.__name__
+            if shell == 'ZMQInteractiveShell':
+                return CFCheckResult.UNKNOWN
+        except NameError:
+            pass
+
     def check(self):
         """
         Checks if user has accepted the collection of the information using a control file.
@@ -192,17 +213,8 @@ class OptInChecker:
         whether the control file is not writable.
         """
 
-        # checks if stdin is not terminal
-        if not stdin.isatty():
+        if self._check_input_is_terminal() or self._check_run_in_notebook():
             return CFCheckResult.UNKNOWN
-
-        # checks if script is in Jupyter notebook
-        try:
-            shell = get_ipython().__class__.__name__
-            if shell == 'ZMQInteractiveShell':
-                return CFCheckResult.UNKNOWN
-        except NameError:
-            pass
 
         if not os.path.exists(self.control_file()):
             if not self.create_new_cf_file():
@@ -217,7 +229,7 @@ class OptInChecker:
                 elif content['opt_in'] == 0:
                     return CFCheckResult.CF_HAS_RESULT
                 else:
-                    raise Exception('Incorrect format of the file containing opt-in result.')
+                    raise Exception('Incorrect format of the file with opt-in status.')
             else:
                 if not self.check_if_ask_period_is_passed():
                     return CFCheckResult.UNKNOWN

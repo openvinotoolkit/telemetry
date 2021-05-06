@@ -20,6 +20,7 @@ class OptInCheckerTest(unittest.TestCase):
     def init_opt_in_checker(self):
         self.opt_in_checker.control_file_base_dir = MagicMock(return_value=self.test_directory)
         self.opt_in_checker.control_file_subdirectory = MagicMock(return_value=self.test_subdir)
+        self.opt_in_checker._check_input_is_terminal = MagicMock(return_value=False)
         if not os.path.exists(self.test_directory):
             os.mkdir(os.path.join(self.test_directory))
         test_subdir = os.path.join(self.test_directory, self.test_subdir)
@@ -93,7 +94,7 @@ class OptInCheckerTest(unittest.TestCase):
         try:
             self.opt_in_checker.check()
         except Exception as e:
-            assert 'Incorrect format of control file.' == str(e)
+            assert 'Incorrect format of the file with opt-in status.' == str(e)
 
         self.remove_test_subdir()
 
