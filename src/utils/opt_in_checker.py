@@ -201,9 +201,10 @@ class OptInChecker:
         try:
             shell = get_ipython().__class__.__name__
             if shell == 'ZMQInteractiveShell':
-                return CFCheckResult.UNKNOWN
+                return True
         except NameError:
             pass
+        return False
 
     def check(self):
         """
@@ -212,7 +213,6 @@ class OptInChecker:
         :return: bitmask with opt-in dialog result and information of whether the control file was updated and
         whether the control file is not writable.
         """
-
         if self._check_input_is_terminal() or self._check_run_in_notebook():
             return CFCheckResult.UNKNOWN
 

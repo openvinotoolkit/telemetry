@@ -42,7 +42,6 @@ class Telemetry(metaclass=SingletonMetaClass):
                     opt_in_action = "accepted"
                 elif opt_in_check_result & CFCheckResult.CF_HAS_RESULT:
                     opt_in_action = "declined"
-                    remove_uid(self.backend.get_uid_filename())
                 else:
                     opt_in_action = "undefined"
                 if opt_in_action == "undefined":
