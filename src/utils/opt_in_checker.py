@@ -195,8 +195,8 @@ class OptInChecker:
     @staticmethod
     def _check_run_in_notebook():
         """
-        Checks that script is run in notebook.
-        :return: True script is run in notebook, otherwise False
+        Checks that script is executed in Jupyter Notebook.
+        :return: True script is executed in Jupyter Notebook, otherwise False
         """
         try:
             shell = get_ipython().__class__.__name__

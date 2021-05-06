@@ -24,7 +24,6 @@ class Telemetry(metaclass=SingletonMetaClass):
     The main class to send telemetry data. It uses singleton pattern. The instance should be initialized with the
     application name, version and tracking id just once. Later the instance can be created without parameters.
     """
-
     def __init__(self, app_name: str = None, app_version: str = None, tid: [None, str] = None,
                  backend: [str, None] = 'ga'):
         if not hasattr(self, 'tid'):
@@ -49,7 +48,7 @@ class Telemetry(metaclass=SingletonMetaClass):
                 else:
                     self.send_event("opt_in", opt_in_action, "undefined_" + opt_in_action, force_send=True)
             if opt_in_check_result & CFCheckResult.NO_WRITABLE:
-                self.send_event("opt_in", "undefined", "no_writable", force_send=True)
+                self.send_event("opt_in", "undefined", "nowritable", force_send=True)
         else:  # use already configured instance
             assert self.sender is not None, 'The first instantiation of the Telemetry should be done with the ' \
                                             'application name and version'
