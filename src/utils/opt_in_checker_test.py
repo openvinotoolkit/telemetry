@@ -18,6 +18,7 @@ class OptInCheckerTest(unittest.TestCase):
     test_subdir = 'test_opt_in_subdir'
 
     def init_opt_in_checker(self):
+        self.remove_test_subdir()
         self.opt_in_checker.control_file_base_dir = MagicMock(return_value=self.test_directory)
         self.opt_in_checker.control_file_subdirectory = MagicMock(return_value=self.test_subdir)
         self.opt_in_checker._check_input_is_terminal = MagicMock(return_value=False)
