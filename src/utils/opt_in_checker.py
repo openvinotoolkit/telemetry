@@ -213,7 +213,7 @@ class OptInChecker:
         :return: bitmask with opt-in dialog result and information of whether the control file was updated and
         whether the control file is not writable.
         """
-        if self._check_input_is_terminal() or self._check_run_in_notebook():
+        if not self._check_input_is_terminal() or self._check_run_in_notebook():
             return CFCheckResult.UNKNOWN
 
         if not os.path.exists(self.control_file()):
