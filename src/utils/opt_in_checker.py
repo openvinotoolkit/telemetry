@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 from enum import IntEnum
 from platform import system
+from sys import stdin
 
 from .input_with_timeout import input_with_timeout
 
@@ -20,17 +21,14 @@ class CFCheckResult(IntEnum):
 
 
 class OptInChecker:
-    dialog_timeout = 60  # seconds
+    dialog_timeout = 25  # seconds
     asking_period = 14  # days
     path_to_opt_in_out_script = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
                                              "opt_in_out.py")
-    opt_in_question = "To improve our software and customer experience, Intel would like to collect technical" \
-                      "information about your software installation and runtime status (such as metrics, " \
-                      "software SKU/serial, counters, flags and timestamps), and development environment " \
-                      "(such as operating system, CPU architecture, last 4-digits of the MAC address, " \
-                      "3rd party API usage and other Intel products installed). Information that cannot be linked to" \
-                      "an identifiable person may be retained by Intel as long as it is necessary to support the " \
-                      "software. You can revoke your consent at any time by running {}. DO YOU ACCEPT? " \
+    opt_in_question = "Intel collects technical Information about your software installation statistics, " \
+                      "and development environment to improve product and developer experience.  " \
+                      "Intel may retain Information as long as necessary to support our products.  " \
+                      "You can revoke your consent at any time by running {}. DO YOU ACCEPT? " \
                       "(\"Y\" if you consent to the collection of your information or \"N\" if you do NOT " \
                       "consent to the collection of your information)".format(path_to_opt_in_out_script)
     opt_in_question_incorrect_input = """DO YOU ACCEPT? ("Y" if you consent to the collection of your information 
@@ -160,10 +158,10 @@ class OptInChecker:
         """
         if os.stat(self.control_file()).st_size == 0:
             return True
-        _, content = self._get_info_from_cf()
+        _, content = self.get_info_from_cf()
         return 'opt_in' not in content
 
-    def _get_info_from_cf(self):
+    def get_info_from_cf(self):
         """
         Gets information from control file.
         :return: the tuple, where the first element is True if the file is read successfully, otherwise False
@@ -193,18 +191,33 @@ class OptInChecker:
         :return: bitmask with opt-in dialog result and information of whether the control file was updated and
         whether the control file is not writable.
         """
+
+        # checks if stdin is not terminal
+        if not stdin.isatty():
+            return CFCheckResult.UNKNOWN
+
+        # checks if script is in Jupyter notebook
+        try:
+            shell = get_ipython().__class__.__name__
+            if shell == 'ZMQInteractiveShell':
+                return CFCheckResult.UNKNOWN
+        except NameError:
+            pass
+
         if not os.path.exists(self.control_file()):
             if not self.create_new_cf_file():
                 return CFCheckResult.NO_WRITABLE
         else:
             if not self.cf_is_empty():
-                _, content = self._get_info_from_cf()
+                read_successfully, content = self.get_info_from_cf()
+                if not read_successfully:
+                    return CFCheckResult.UNKNOWN
                 if content['opt_in'] == 1:
                     return CFCheckResult.APPROVED | CFCheckResult.CF_HAS_RESULT
                 elif content['opt_in'] == 0:
                     return CFCheckResult.CF_HAS_RESULT
                 else:
-                    raise Exception('Incorrect format of control file.')
+                    raise Exception('Incorrect format of the file containing opt-in result.')
             else:
                 if not self.check_if_ask_period_is_passed():
                     return CFCheckResult.UNKNOWN

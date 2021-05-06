@@ -1,6 +1,8 @@
 # Copyright (C) 2018-2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import os
+
 from .backend.backend import BackendRegistry
 from .utils.opt_in_checker import OptInChecker, CFCheckResult
 from .utils.sender import TelemetrySender
@@ -22,6 +24,7 @@ class Telemetry(metaclass=SingletonMetaClass):
     The main class to send telemetry data. It uses singleton pattern. The instance should be initialized with the
     application name, version and tracking id just once. Later the instance can be created without parameters.
     """
+
     def __init__(self, app_name: str = None, app_version: str = None, tid: [None, str] = None,
                  backend: [str, None] = 'ga'):
         if not hasattr(self, 'tid'):
@@ -36,14 +39,18 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.sender = TelemetrySender()
             if opt_in_check_result & CFCheckResult.DIALOG_WAS_STARTED:
                 if opt_in_check_result & CFCheckResult.APPROVED:
-                    result_msg = "accepted"
+                    opt_in_action = "accepted"
                 elif opt_in_check_result & CFCheckResult.CF_HAS_RESULT:
-                    result_msg = "declined"
+                    opt_in_action = "declined"
+                    remove_uid(self.backend.get_uid_filename())
                 else:
-                    result_msg = "no_answer"
-                self.send_event("mo", "opt_in", result_msg, force_send=True)
+                    opt_in_action = "undefined"
+                if opt_in_action == "undefined":
+                    self.send_event("opt_in", "undefined", "noanswer", force_send=True)
+                else:
+                    self.send_event("opt_in", opt_in_action, "undefined_" + opt_in_action, force_send=True)
             if opt_in_check_result & CFCheckResult.NO_WRITABLE:
-                self.send_event("mo", "opt_in", "no_writable", force_send=True)
+                self.send_event("opt_in", "undefined", "no_writable", force_send=True)
         else:  # use already configured instance
             assert self.sender is not None, 'The first instantiation of the Telemetry should be done with the ' \
                                             'application name and version'
@@ -101,3 +108,57 @@ class Telemetry(metaclass=SingletonMetaClass):
     def send_stack_trace(self, stack_trace: str, **kwargs):
         if self.consent:
             pass
+
+    @staticmethod
+    def _update_opt_in_status(new_opt_in_status: bool):
+        app_name = 'opt_in_out'
+        # TODO: add functionality for getting openvino version
+        app_version = "UNKNOWN"
+        opt_in_checker = OptInChecker()
+
+        if not os.path.exists(opt_in_checker.control_file()):
+            if not opt_in_checker.create_new_cf_file():
+                _ = Telemetry(app_name=app_name, app_version=app_version)
+                print("Failed to update opt-in status. "
+                      "Please allow write access to the following directory: {}".format(
+                    os.path.join(opt_in_checker.control_file_base_dir(), opt_in_checker.control_file_subdirectory())))
+                return
+
+        prev_result = "undefined"
+        if not opt_in_checker.cf_is_empty():
+            read_successfully, content = opt_in_checker.get_info_from_cf()
+            if read_successfully:
+                if content['opt_in'] == 1:
+                    prev_result = "accepted"
+                elif content['opt_in'] == 0:
+                    prev_result = "declined"
+
+        if new_opt_in_status:
+            updated = opt_in_checker.update_result(CFCheckResult.APPROVED)
+        else:
+            updated = opt_in_checker.update_result(CFCheckResult.CF_HAS_RESULT)
+        if not updated:
+            telemetry = Telemetry(app_name=app_name, app_version=app_version)
+            if not opt_in_checker.cf_is_empty() or not opt_in_checker.check_if_ask_period_is_passed():
+                telemetry.send_event("opt_in", "undefined", "nowritable")
+            print("Failed to update opt-in status. "
+                  "Please allow write access to the following file: {}".format(opt_in_checker.control_file()))
+            return
+
+        telemetry = Telemetry(app_name=app_name, app_version=app_version)
+        if new_opt_in_status:
+            if prev_result != "accepted":
+                telemetry.send_event("opt_in", "accepted", prev_result + "_accepted")
+            print("You have successfully opted in to send the telemetry data.")
+        else:
+            if prev_result != "declined":
+                telemetry.send_event("opt_in", "declined", prev_result + "_declined", force_send=True)
+            print("You have successfully opted out to send the telemetry data.")
+
+    @staticmethod
+    def opt_in():
+        Telemetry._update_opt_in_status(True)
+
+    @staticmethod
+    def opt_out():
+        Telemetry._update_opt_in_status(False)
