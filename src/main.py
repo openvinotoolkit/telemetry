@@ -1,11 +1,10 @@
 # Copyright (C) 2018-2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import os
 from enum import Enum
 
 from .backend.backend import BackendRegistry
-from .utils.opt_in_checker import OptInChecker, CFCheckResult
+from .utils.opt_in_checker import OptInChecker, CFCheckResult, DialogResult
 from .utils.sender import TelemetrySender
 
 
@@ -36,26 +35,30 @@ class Telemetry(metaclass=SingletonMetaClass):
         if not hasattr(self, 'tid'):
             self.tid = None
         if app_name is not None:
-            opt_in_check_result = OptInChecker().check()
-            self.consent = opt_in_check_result & CFCheckResult.APPROVED
+            opt_in_checker = OptInChecker()
+            opt_in_check_result = opt_in_checker.check()
+            self.consent = opt_in_check_result == CFCheckResult.ACCEPTED
+
             # override default tid
             if tid is not None:
                 self.tid = tid
             self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
             self.sender = TelemetrySender()
-            if opt_in_check_result & CFCheckResult.DIALOG_WAS_STARTED:
-                if opt_in_check_result & CFCheckResult.APPROVED:
-                    opt_in_action = OptInStatus.ACCEPTED
-                elif opt_in_check_result & CFCheckResult.CF_HAS_RESULT:
-                    opt_in_action = OptInStatus.DECLINED
-                else:
-                    opt_in_action = OptInStatus.UNDEFINED
-                if opt_in_action == OptInStatus.UNDEFINED:
-                    self.send_opt_in_event(OptInStatus.UNDEFINED, label="noanswer", force_send=True)
-                else:
-                    self.send_opt_in_event(opt_in_action, force_send=True)
-            if opt_in_check_result & CFCheckResult.NO_WRITABLE:
-                self.send_opt_in_event(OptInStatus.UNDEFINED, label="nowritable", force_send=True)
+
+            if opt_in_check_result == CFCheckResult.NO_FILE:
+                if opt_in_checker.create_or_check_cf_dir():
+                    answer = CFCheckResult.DECLINED
+                    if not opt_in_checker.update_result(answer):
+                        pass
+                    try:
+                        answer = opt_in_checker.opt_in_dialog()
+                        if answer == DialogResult.ACCEPTED:
+                            self.consent = True
+                            self.send_opt_in_event(OptInStatus.ACCEPTED)
+                        else:
+                            self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
+                    except KeyboardInterrupt:
+                        pass
         else:  # use already configured instance
             assert self.sender is not None, 'The first instantiation of the Telemetry should be done with the ' \
                                             'application name and version'
@@ -127,44 +130,26 @@ class Telemetry(metaclass=SingletonMetaClass):
         # TODO: add functionality for getting openvino version
         app_version = "UNKNOWN"
         opt_in_checker = OptInChecker()
-
-        if not os.path.exists(opt_in_checker.control_file()):
-            if not opt_in_checker.create_new_cf_file():
-                _ = Telemetry(app_name=app_name, app_version=app_version)
-                print("Failed to update opt-in status. "
-                      "Please allow write access to the following directory: {}".format(
-                    os.path.join(opt_in_checker.control_file_base_dir(), opt_in_checker.control_file_subdirectory())))
-                return
-
-        prev_result = OptInStatus.UNDEFINED
-        if not opt_in_checker.cf_is_empty():
-            read_successfully, content = opt_in_checker.get_info_from_cf()
-            if read_successfully:
-                if content['opt_in'] == 1:
-                    prev_result = OptInStatus.ACCEPTED
-                elif content['opt_in'] == 0:
-                    prev_result = OptInStatus.DECLINED
+        opt_in_check = opt_in_checker.check()
 
         if new_opt_in_status:
-            updated = opt_in_checker.update_result(CFCheckResult.APPROVED)
+            updated = opt_in_checker.update_result(CFCheckResult.ACCEPTED)
         else:
-            updated = opt_in_checker.update_result(CFCheckResult.CF_HAS_RESULT)
+            updated = opt_in_checker.update_result(CFCheckResult.DECLINED)
         if not updated:
-            telemetry = Telemetry(app_name=app_name, app_version=app_version)
-            if not opt_in_checker.cf_is_empty() or not opt_in_checker.check_if_ask_period_is_passed():
-                telemetry.send_opt_in_event(OptInStatus.UNDEFINED, label="nowritable", force_send=True)
-            print("Failed to update opt-in status. "
-                  "Please allow write access to the following file: {}".format(opt_in_checker.control_file()))
             return
 
         telemetry = Telemetry(app_name=app_name, app_version=app_version)
         if new_opt_in_status:
-            if prev_result != OptInStatus.ACCEPTED:
-                telemetry.send_opt_in_event(OptInStatus.ACCEPTED, prev_result)
+            if opt_in_check != CFCheckResult.ACCEPTED:
+                telemetry.send_opt_in_event(OptInStatus.ACCEPTED,
+                                            OptInStatus.DECLINED if opt_in_check == CFCheckResult.DECLINED else OptInStatus.UNDEFINED)
             print("You have successfully opted in to send the telemetry data.")
         else:
-            if prev_result != OptInStatus.DECLINED:
-                telemetry.send_opt_in_event(OptInStatus.DECLINED, prev_result, force_send=True)
+            if opt_in_check != CFCheckResult.DECLINED:
+                telemetry.send_opt_in_event(OptInStatus.DECLINED,
+                                            OptInStatus.ACCEPTED if opt_in_check == CFCheckResult.ACCEPTED else OptInStatus.UNDEFINED,
+                                            force_send=True)
             print("You have successfully opted out to send the telemetry data.")
 
     def send_opt_in_event(self, new_state: OptInStatus, prev_state: OptInStatus = OptInStatus.UNDEFINED,

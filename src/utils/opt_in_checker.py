@@ -4,20 +4,23 @@
 import json
 import os
 import time
-from datetime import datetime
-from enum import IntEnum
+from enum import Enum
 from platform import system
 from sys import stdin
 
 from .input_with_timeout import input_with_timeout
 
 
-class CFCheckResult(IntEnum):
-    UNKNOWN = 0
-    CF_HAS_RESULT = 1
-    APPROVED = 2
-    DIALOG_WAS_STARTED = 4
-    NO_WRITABLE = 8
+class CFCheckResult(Enum):
+    DECLINED = 0
+    ACCEPTED = 1
+    NO_FILE = 2
+
+
+class DialogResult(Enum):
+    DECLINED = 0
+    ACCEPTED = 1
+    TIMEOUT_REACHED = 2
 
 
 class OptInChecker:
@@ -46,12 +49,12 @@ class OptInChecker:
         answer = input_with_timeout(prompt='>>', timeout=timeout)
         answer = answer.lower()
         if answer == "n" or answer == "no":
-            return CFCheckResult.CF_HAS_RESULT
+            return DialogResult.DECLINED
         if answer == "y" or answer == "yes":
-            return CFCheckResult.APPROVED | CFCheckResult.CF_HAS_RESULT
-        return CFCheckResult.UNKNOWN
+            return DialogResult.ACCEPTED
+        return DialogResult.TIMEOUT_REACHED
 
-    def _opt_in_dialog(self):
+    def opt_in_dialog(self):
         """
         Runs opt-in dialog until the timeout is expired.
         :return: opt-in dialog result.
@@ -59,7 +62,7 @@ class OptInChecker:
         start_time = time.time()
         answer = self._ask_opt_in(self.opt_in_question, self.dialog_timeout)
         time_passed = time.time() - start_time
-        while time_passed < self.dialog_timeout and answer == CFCheckResult.UNKNOWN:
+        while time_passed < self.dialog_timeout and answer == DialogResult.TIMEOUT_REACHED:
             answer = self._ask_opt_in(self.opt_in_question_incorrect_input, self.dialog_timeout - time_passed)
             time_passed = time.time() - start_time
         return answer
@@ -109,12 +112,7 @@ class OptInChecker:
         Creates a new control file.
         :return: True if the file is created successfully, otherwise False
         """
-        cf_dir = os.path.join(self.control_file_base_dir(), self.control_file_subdirectory())
-        if not os.path.exists(cf_dir):
-            if not os.access(self.control_file_base_dir(), os.W_OK):
-                return False
-            os.mkdir(cf_dir)
-        if not os.access(cf_dir, os.W_OK):
+        if not self.create_or_check_cf_dir():
             return False
         try:
             open(self.control_file(), 'w').close()
@@ -122,14 +120,28 @@ class OptInChecker:
             return False
         return True
 
-    def _update_timestamp(self):
+    def create_or_check_cf_dir(self):
         """
-        Updates the 'timestamp' value in the control file.
-        :return: False if the control file is not writable, otherwise True
+        Creates control file directory and checks if the directory is writable.
+        :return: True if the directory is created and writable, otherwise False
         """
-        if not os.access(self.control_file(), os.W_OK):
+        cf_dir = os.path.join(self.control_file_base_dir(), self.control_file_subdirectory())
+        if not os.path.isdir(cf_dir):
+            if not os.access(cf_dir, os.W_OK):
+                print("Failed to update opt-in status. "
+                      "Cannot create a file when that file already exists: {}".format(cf_dir))
+                return
+            os.remove(cf_dir)
+        if not os.path.exists(cf_dir):
+            if not os.access(self.control_file_base_dir(), os.W_OK):
+                print("Failed to update opt-in status. "
+                      "Please allow write access to the following directory: {}".format(self.control_file_base_dir()))
+                return False
+            os.mkdir(cf_dir)
+        if not os.access(cf_dir, os.W_OK):
+            print("Failed to update opt-in status. "
+                  "Please allow write access to the following directory: {}".format(cf_dir))
             return False
-        os.utime(self.control_file(), (datetime.now().timestamp(), datetime.now().timestamp()))
         return True
 
     def update_result(self, result: CFCheckResult):
@@ -138,11 +150,16 @@ class OptInChecker:
         :param result: opt-in dialog result.
         :return: False if the control file is not writable, otherwise True
         """
+        if not os.path.exists(self.control_file()):
+            if not self.create_new_cf_file():
+                return False
         if not os.access(self.control_file(), os.W_OK):
+            print("Failed to update opt-in status. "
+                  "Please allow write access to the following file: {}".format(self.control_file()))
             return False
         try:
             with open(self.control_file(), 'w') as file:
-                if result & CFCheckResult.APPROVED:
+                if result == CFCheckResult.ACCEPTED:
                     content = {'opt_in': 1}
                 else:
                     content = {'opt_in': 0}
@@ -176,14 +193,6 @@ class OptInChecker:
             return False, {}
         return True, content
 
-    def check_if_ask_period_is_passed(self):
-        """
-        Checks if asking period has passed.
-        :return: True if the period has passed, otherwise False
-        """
-        delta = datetime.now() - datetime.fromtimestamp(os.path.getmtime(self.control_file()))
-        return delta.days > self.asking_period
-
     @staticmethod
     def _check_input_is_terminal():
         """
@@ -212,34 +221,16 @@ class OptInChecker:
         whether the control file is not writable.
         """
         if not self._check_input_is_terminal() or self._check_run_in_notebook():
-            return CFCheckResult.UNKNOWN
+            return CFCheckResult.DECLINED
 
         if not os.path.exists(self.control_file()):
-            if not self.create_new_cf_file():
-                return CFCheckResult.NO_WRITABLE
-        else:
-            if not self.cf_is_empty():
-                read_successfully, content = self.get_info_from_cf()
-                if not read_successfully:
-                    return CFCheckResult.UNKNOWN
-                if content['opt_in'] == 1:
-                    return CFCheckResult.APPROVED | CFCheckResult.CF_HAS_RESULT
-                elif content['opt_in'] == 0:
-                    return CFCheckResult.CF_HAS_RESULT
-                else:
-                    print('Incorrect format of the file with opt-in status.')
-                    return CFCheckResult.UNKNOWN
-            else:
-                if not self.check_if_ask_period_is_passed():
-                    return CFCheckResult.UNKNOWN
+            return CFCheckResult.NO_FILE
 
-        if not self._update_timestamp():
-            return CFCheckResult.NO_WRITABLE
-
-        try:
-            answer = self._opt_in_dialog()
-        except KeyboardInterrupt:
-            answer = CFCheckResult.UNKNOWN
-        if answer & CFCheckResult.CF_HAS_RESULT:
-            self.update_result(answer)
-        return answer | CFCheckResult.DIALOG_WAS_STARTED
+        if not self.cf_is_empty():
+            _, content = self.get_info_from_cf()
+            if content['opt_in'] == 1:
+                return CFCheckResult.ACCEPTED
+            elif content['opt_in'] == 0:
+                return CFCheckResult.DECLINED
+        print('Incorrect format of the file with opt-in status.')
+        return CFCheckResult.DECLINED

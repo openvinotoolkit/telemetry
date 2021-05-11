@@ -48,9 +48,9 @@ class OptInCheckerTest(unittest.TestCase):
         if not os.path.exists(test_subdir):
             os.mkdir(test_subdir)
         os.chmod(test_subdir, 0o444)
-        result = self.opt_in_checker.check()
 
-        self.assertTrue(result == CFCheckResult.NO_WRITABLE)
+        self.assertTrue(self.opt_in_checker.check() == CFCheckResult.NO_FILE)
+        self.assertFalse(self.opt_in_checker.create_or_check_cf_dir())
         self.remove_test_subdir()
 
     def test_dir_no_writable(self):
@@ -61,9 +61,9 @@ class OptInCheckerTest(unittest.TestCase):
             return
         self.init_opt_in_checker()
         os.chmod(self.test_directory, 0o444)
-        result = self.opt_in_checker.check()
 
-        self.assertTrue(result == CFCheckResult.NO_WRITABLE)
+        self.assertTrue(self.opt_in_checker.check() == CFCheckResult.NO_FILE)
+        self.assertFalse(self.opt_in_checker.create_or_check_cf_dir())
         os.chmod(self.test_directory, 0o777)
         self.remove_test_subdir()
 
@@ -73,9 +73,11 @@ class OptInCheckerTest(unittest.TestCase):
         if os.path.exists(test_subdir):
             os.rmdir(test_subdir)
         open(test_subdir, 'w').close()
-        result = self.opt_in_checker.check()
+        os.chmod(test_subdir, 0o444)
 
-        self.assertTrue(result == CFCheckResult.NO_WRITABLE)
+        self.assertTrue(self.opt_in_checker.check() == CFCheckResult.NO_FILE)
+        self.assertFalse(self.opt_in_checker.create_or_check_cf_dir())
+        os.chmod(test_subdir, 0o777)
         os.remove(test_subdir)
         self.remove_test_subdir()
 
@@ -84,7 +86,7 @@ class OptInCheckerTest(unittest.TestCase):
         with open(self.opt_in_checker.control_file(), 'w') as file:
             file.write("{ abc")
         result = self.opt_in_checker.check()
-        self.assertTrue(result == CFCheckResult.UNKNOWN)
+        self.assertTrue(result == CFCheckResult.DECLINED)
         self.remove_test_subdir()
 
     def test_incorrect_result_value(self):
@@ -93,20 +95,6 @@ class OptInCheckerTest(unittest.TestCase):
             content = {'opt_in': 312}
             json.dump(content, file)
         result = self.opt_in_checker.check()
-        self.assertTrue(result == CFCheckResult.UNKNOWN)
+        self.assertTrue(result == CFCheckResult.DECLINED)
         self.remove_test_subdir()
 
-    def test_cf_no_writable(self):
-        self.init_opt_in_checker()
-
-        open(self.opt_in_checker.control_file(), 'w').close()
-        update_date = datetime.fromtimestamp(datetime.now().timestamp()) - timedelta(
-            days=self.opt_in_checker.asking_period + 1)
-        os.utime(self.opt_in_checker.control_file(), (update_date.timestamp(), update_date.timestamp()))
-        os.chmod(self.opt_in_checker.control_file(), 0o444)
-
-        result = self.opt_in_checker.check()
-        self.assertTrue(result == CFCheckResult.NO_WRITABLE)
-
-        os.chmod(self.opt_in_checker.control_file(), 0o777)
-        self.remove_test_subdir()
