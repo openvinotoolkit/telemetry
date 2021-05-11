@@ -199,9 +199,7 @@ class OptInChecker:
         :return: True script is executed in Jupyter Notebook, otherwise False
         """
         try:
-            shell = get_ipython().__class__.__name__
-            if shell == 'ZMQInteractiveShell':
-                return True
+            return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
         except NameError:
             pass
         return False
@@ -229,7 +227,8 @@ class OptInChecker:
                 elif content['opt_in'] == 0:
                     return CFCheckResult.CF_HAS_RESULT
                 else:
-                    raise Exception('Incorrect format of the file with opt-in status.')
+                    print('WARNING: Incorrect format of the file with opt-in status.')
+                    return CFCheckResult.UNKNOWN
             else:
                 if not self.check_if_ask_period_is_passed():
                     return CFCheckResult.UNKNOWN
@@ -240,8 +239,7 @@ class OptInChecker:
         try:
             answer = self._opt_in_dialog()
         except KeyboardInterrupt:
-            return CFCheckResult.UNKNOWN | CFCheckResult.DIALOG_WAS_STARTED
+            answer = CFCheckResult.UNKNOWN
         if answer & CFCheckResult.CF_HAS_RESULT:
             self.update_result(answer)
-        answer = answer | CFCheckResult.DIALOG_WAS_STARTED
-        return answer
+        return answer | CFCheckResult.DIALOG_WAS_STARTED

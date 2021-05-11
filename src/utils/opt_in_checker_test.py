@@ -92,11 +92,8 @@ class OptInCheckerTest(unittest.TestCase):
         with open(self.opt_in_checker.control_file(), 'w') as file:
             content = {'opt_in': 312}
             json.dump(content, file)
-        try:
-            self.opt_in_checker.check()
-        except Exception as e:
-            assert 'Incorrect format of the file with opt-in status.' == str(e)
-
+        result = self.opt_in_checker.check()
+        self.assertTrue(result == CFCheckResult.UNKNOWN)
         self.remove_test_subdir()
 
     def test_cf_no_writable(self):
