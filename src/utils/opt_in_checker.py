@@ -227,7 +227,7 @@ class OptInChecker:
                 elif content['opt_in'] == 0:
                     return CFCheckResult.CF_HAS_RESULT
                 else:
-                    print('WARNING: Incorrect format of the file with opt-in status.')
+                    print('Incorrect format of the file with opt-in status.')
                     return CFCheckResult.UNKNOWN
             else:
                 if not self.check_if_ask_period_is_passed():
