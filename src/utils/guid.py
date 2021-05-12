@@ -62,3 +62,17 @@ def get_uid_path():
         raise Exception('Failed to determine the operation system type')
 
     return os.path.join(OptInChecker.control_file_base_dir(), subdir)
+
+
+def remove_uid_file(file_name: str):
+    """
+    Removes UID file.
+    :param file_name: name of the file with the UID
+    :return: None
+    """
+    uid_file = os.path.join(get_uid_path(), file_name)
+    if os.path.exists(uid_file):
+        if not os.access(uid_file, os.W_OK):
+            print("Failed to remove UID file {}.".format(uid_file))
+            return
+        os.remove(uid_file)

@@ -4,32 +4,33 @@
 import uuid
 
 from .backend import TelemetryBackend
+from ..utils.guid import get_or_generate_uid, remove_uid_file
 from ..utils.message import Message, MessageType
-from ..utils.guid import get_or_generate_uid
 
 
 class GABackend(TelemetryBackend):
     backend_url = 'https://www.google-analytics.com/collect'
     id = 'ga'
+    uid_filename = 'openvino_ga_uid'
 
     def __init__(self, tid: str = None, app_name: str = None, app_version: str = None):
         super(GABackend, self).__init__(tid, app_name, app_version)
         if tid is None:
             tid = 'UA-17808594-29'
         self.tid = tid
-        self.uid = get_or_generate_uid('openvino_ga_uid', lambda: str(uuid.uuid4()), is_valid_uuid4)
+        self.uid = None
         self.app_name = app_name
         self.app_version = app_version
         self.default_message_attrs = {
             'v': '1',  # API Version
             'tid': self.tid,
-            'cid': self.uid,
             'an': self.app_name,
             'av': self.app_version,
             'ua': 'Opera/9.80 (Windows NT 6.0) Presto/2.12.388 Version/12.14'  # dummy identifier of the browser
         }
 
     def send(self, message: Message):
+        assert self.uid is not None, "UID file should be generated before massage sending."
         try:
             import requests
             requests.post(self.backend_url, message.attrs, timeout=1.0)
@@ -93,6 +94,18 @@ class GABackend(TelemetryBackend):
             'ev': 1,
         })
         return Message(MessageType.STACK_TRACE, data)
+
+    def remove_uid_file(self):
+        self.uid = None
+        self.default_message_attrs['cid'] = None
+        remove_uid_file(self.uid_filename)
+
+    def generate_new_uid_file(self):
+        self.uid = get_or_generate_uid(self.uid_filename, lambda: str(uuid.uuid4()), is_valid_uuid4)
+        self.default_message_attrs['cid'] = self.uid
+
+    def uid_file_initialized(self):
+        return self.uid is not None
 
 
 def is_valid_uuid4(uid: str):

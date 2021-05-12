@@ -54,6 +54,7 @@ class Telemetry(metaclass=SingletonMetaClass):
                         answer = opt_in_checker.opt_in_dialog()
                         if answer == DialogResult.ACCEPTED:
                             self.consent = True
+                            self.backend.generate_new_uid_file()
                             self.send_opt_in_event(OptInStatus.ACCEPTED)
                         else:
                             self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
@@ -85,6 +86,8 @@ class Telemetry(metaclass=SingletonMetaClass):
         :param kwargs: additional parameters
         :return: None
         """
+        if not self.backend.uid_file_initialized():
+            return
         if self.consent or force_send:
             self.sender.send(self.backend, self.backend.build_event_message(event_category, event_action, event_label,
                                                                             event_value, **kwargs))
@@ -141,6 +144,7 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         telemetry = Telemetry(app_name=app_name, app_version=app_version)
         if new_opt_in_status:
+            telemetry.backend.generate_new_uid_file()
             if opt_in_check != CFCheckResult.ACCEPTED:
                 telemetry.send_opt_in_event(OptInStatus.ACCEPTED,
                                             OptInStatus.DECLINED if opt_in_check == CFCheckResult.DECLINED else OptInStatus.UNDEFINED)
@@ -150,6 +154,7 @@ class Telemetry(metaclass=SingletonMetaClass):
                 telemetry.send_opt_in_event(OptInStatus.DECLINED,
                                             OptInStatus.ACCEPTED if opt_in_check == CFCheckResult.ACCEPTED else OptInStatus.UNDEFINED,
                                             force_send=True)
+            telemetry.backend.remove_uid_file()
             print("You have successfully opted out to send the telemetry data.")
 
     def send_opt_in_event(self, new_state: OptInStatus, prev_state: OptInStatus = OptInStatus.UNDEFINED,
