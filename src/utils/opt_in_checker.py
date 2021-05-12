@@ -9,6 +9,7 @@ from platform import system
 from sys import stdin
 
 from .input_with_timeout import input_with_timeout
+from .colored_print import colored_print
 
 
 class CFCheckResult(Enum):
@@ -24,13 +25,12 @@ class DialogResult(Enum):
 
 
 class OptInChecker:
-    dialog_timeout = 25  # seconds
-    asking_period = 14  # days
+    dialog_timeout = 50  # seconds
     path_to_opt_in_out_script = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
                                              "opt_in_out.py")
-    opt_in_question = "Intel collects technical Information about your software installation statistics, " \
-                      "and development environment to improve product and developer experience.  " \
-                      "Intel may retain Information as long as necessary to support our products.  " \
+    opt_in_question = "\nIntel collects technical Information about your software installation statistics, " \
+                      "and development environment to improve product and developer experience. " \
+                      "Intel may retain Information as long as necessary to support our products. " \
                       "You can revoke your consent at any time by running {}. DO YOU ACCEPT? " \
                       "(\"Y\" if you consent to the collection of your information or \"N\" if you do NOT " \
                       "consent to the collection of your information)".format(path_to_opt_in_out_script)
@@ -45,7 +45,7 @@ class OptInChecker:
         :param timeout: timeout to wait.
         :return: opt-in dialog result.
         """
-        print(question)
+        colored_print(question)
         answer = input_with_timeout(prompt='>>', timeout=timeout)
         answer = answer.lower()
         if answer == "n" or answer == "no":
