@@ -36,6 +36,11 @@ setup(name='openvino-telemetry',
       cmdclass={
           'build_py': BuildCmd,
       },
+      entry_points={
+          'console_scripts': [
+              'opt_in_out = openvino_telemetry.opt_in_out:main',
+          ],
+      },
       classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",

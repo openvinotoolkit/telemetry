@@ -7,7 +7,8 @@ import argparse
 
 import openvino_telemetry as tm
 
-if __name__ == "__main__":
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--opt_in", default=False, action='store_true',
                         help="Enabling sending anonymous telemetry data.")
@@ -25,3 +26,7 @@ if __name__ == "__main__":
     else:
         tm.Telemetry.opt_out()
     exit(0)
+
+
+if __name__ == "__main__":
+    main()
