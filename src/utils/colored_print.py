@@ -26,4 +26,4 @@ def colored_print(text: str):
         windll.kernel32.SetConsoleTextAttribute(windll.kernel32.GetStdHandle(-11),
                                                 console_screen_buffer_info.wAttributes)
     else:
-        print('\033[92m' + text + '\033[0m')
+        print('\033[32m' + text + '\033[0m')
