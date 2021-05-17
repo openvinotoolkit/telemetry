@@ -3,6 +3,7 @@
 
 import os
 from enum import Enum
+from pathlib import Path
 from platform import system
 
 
@@ -25,8 +26,10 @@ def isip_consent_base_dir():
     if platform == 'Windows':
         dir_to_check = '$LOCALAPPDATA'
     elif platform in ['Linux', 'Darwin']:
-        dir_to_check = '$HOME'
-
+        # In some environments, the $HOME directory can be missed,
+        # and in this case, expanding the $HOME variable returns the empty string
+        # Path.home() returns the path to the home directory without expanding the variable
+        dir_to_check = Path.home()
     if dir_to_check is None:
         raise Exception('Failed to find location of the ISIP consent')
 
