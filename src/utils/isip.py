@@ -26,7 +26,7 @@ def isip_consent_base_dir():
     if platform == 'Windows':
         dir_to_check = '$LOCALAPPDATA'
     elif platform in ['Linux', 'Darwin']:
-        # IIn some environments, the $HOME directory can be missed,
+        # In some environments, the $HOME directory can be missed,
         # and in this case, expanding the $HOME variable returns the empty string
         # Path.home() returns the path to the home directory without expanding the variable
         dir_to_check = Path.home()
