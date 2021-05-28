@@ -66,8 +66,8 @@ def isip_consent():
                 return ISIPConsent.APPROVED
             else:
                 return ISIPConsent.DECLINED
-    except Exception as e:
-        pass
+    except Exception as err:
+        print('[ WARNING ] Failed to open isip file with the following error: {}'.format(err))
 
     # unknown value in the file is considered as a unknown consent
     return ISIPConsent.UNKNOWN
