@@ -31,8 +31,8 @@ class GABackend(TelemetryBackend):
         try:
             import requests
             requests.post(self.backend_url, message.attrs, timeout=1.0)
-        except Exception:
-            pass
+        except Exception as err:
+            print('[ WARNING ] Failed to send event with the following error: {}'.format(err))
 
     def build_event_message(self, event_category: str, event_action: str, event_label: str, event_value: int = 1,
                             **kwargs):

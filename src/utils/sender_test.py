@@ -64,5 +64,5 @@ class TelemetrySenderStress(unittest.TestCase):
             while tm.executor._work_queue.qsize():
                 pass
             self.assertTrue(time.time() - start_time > 4.0)
-        except:
-            pass
+        except Exception as err:
+            print('[ WARNING ] Error while accessing to ThreadPoolExecutor._work_queue.qsize(): {}'.format(err))

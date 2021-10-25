@@ -18,7 +18,8 @@ class BackendRegistry:
 
     @classmethod
     def get_backend(cls, id: str):
-        assert id in cls.r, 'The backend with id "{}" is not registered'.format(id)
+        if id not in cls.r:
+            raise RuntimeError('The backend with id "{}" is not registered'.format(id))
         return cls.r.get(id)
 
 

@@ -33,8 +33,9 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
             self.sender = TelemetrySender()
         else:  # use already configured instance
-            assert self.sender is not None, 'The first instantiation of the Telemetry should be done with the ' \
-                                            'application name, version and TID.'
+            if self.sender is None:
+                raise RuntimeError('The first instantiation of the Telemetry should be done with '
+                                   'the application name, version and TID.')
 
     def force_shutdown(self, timeout: float = 1.0):
         """
