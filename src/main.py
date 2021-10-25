@@ -28,7 +28,7 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.consent = isip.isip_consent() == isip.ISIPConsent.APPROVED
 
             if tid is None:
-                raise RuntimeError('The first instantiation of the Telemetry should be done with TID specified.')
+                print('[ WARNING ] Telemetry will not be sent as TID is not specified.')
 
             self.tid = tid
             self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
