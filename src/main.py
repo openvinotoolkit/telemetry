@@ -22,20 +22,19 @@ class Telemetry(metaclass=SingletonMetaClass):
     The main class to send telemetry data. It uses singleton pattern. The instance should be initialized with the
     application name, version and tracking id just once. Later the instance can be created without parameters.
     """
-    def __init__(self, app_name: str = None, app_version: str = None, tid: [None, str] = None,
+    def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
                  backend: [str, None] = 'ga'):
-        if not hasattr(self, 'tid'):
-            self.tid = None
         if app_name is not None:
             self.consent = isip.isip_consent() == isip.ISIPConsent.APPROVED
-            # override default tid
-            if tid is not None:
-                self.tid = tid
+
+            assert tid is not None, 'The first instantiation of the Telemetry should be done with TID specified.'
+
+            self.tid = tid
             self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
             self.sender = TelemetrySender()
         else:  # use already configured instance
             assert self.sender is not None, 'The first instantiation of the Telemetry should be done with the ' \
-                                            'application name and version'
+                                            'application name, version and TID.'
 
     def force_shutdown(self, timeout: float = 1.0):
         """
