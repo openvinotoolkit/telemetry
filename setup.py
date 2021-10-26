@@ -24,11 +24,17 @@ class BuildCmd(build_py):
 
 packages = ['openvino_telemetry', 'openvino_telemetry.backend', 'openvino_telemetry.utils']
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
 
 setup(name='openvino-telemetry',
       version='0.0.0',
       author='Intel Corporation',
       author_email='openvino_pushbot@intel.com',
+      description="Package for sending telemetry statistics with user's consent, used in combination "
+                  "with other OpenVINO packages.",
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       url='https://github.com/openvinotoolkit/telemetry',
       packages=packages,
       package_dir={'openvino_telemetry': 'src'},
