@@ -29,10 +29,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(name='openvino-telemetry',
       version='0.0.0',
-      author='Intel Corporation',
+      author='Intel® Corporation',
+      license='OSI Approved :: Apache Software License',
       author_email='openvino_pushbot@intel.com',
-      description="Package for sending telemetry statistics with user's consent, used in combination "
-                  "with other OpenVINO packages.",
+      description="OpenVINO™ Telemetry package for sending statistics with user's consent, used in combination "
+                  "with other OpenVINO™ packages.",
       long_description=long_description,
       long_description_content_type='text/markdown',
       url='https://github.com/openvinotoolkit/telemetry',
@@ -43,9 +44,9 @@ setup(name='openvino-telemetry',
           'build_py': BuildCmd,
       },
       classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache Software License",
-        "Operating System :: OS Independent",
+          'Programming Language :: Python :: 3',
+          'OSI Approved :: Apache Software License',
+          'Operating System :: OS Independent',
       ],
       install_requires=['requests>=2.20.0'],
-)
+      )
