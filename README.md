@@ -1,13 +1,13 @@
-#  OpenVINO™ Telemetry
+#  Intel® Distribution of OpenVINO™ Toolkit Telemetry
 
-The implementation of the Python3 library to send telemetry data from OpenVINO™ Toolkit components.
+The implementation of the Python 3 library to send the telemetry data from the OpenVINO™ toolkit components.
 
-To send any data to Google Analytics you are playing with 3 variables: category, action, label.
-- In the category use only the name of the tool. All MO topics should be in 'mo' category, all POT topics in 'pot' category, etc
-- In the action send metric or function, like accuracy or session or conversion. For example, for MO we have: version, framework, conversion_results etc
-- In the label send more detailed data for your action (function). Ex. for version sent string with version name, for framework send string with framework name etc. In the label you can send a string with wrapped dictionary. Ex. "{param: value, version: value, error: value}".
-**Note:** if you want to track connection between data, (ex on what OSes error '123' happened), please send it in one event. Suggest adding it to the label together. If you send data separately you cannot find a connection between then. So, it means that some data will be duplicated, as the same metric/function you will send in different events. 
+To send the data to Google Analytics, use the following three variables: `category`, `action`, and `label`.
 
-BKM
-For ease and automate analytics please follow this rules:
-1. If you want to send a dict In label, please always sent **all** keys, even if a key is empty, sent 'none' to it's value. This helps to automate analytics. 
+- In the `category`, use only the name of the tool. Place all Model Optimizer (MO) topics in the 'mo' category, all Post-Training Optimization Tool (POT) topics in the 'pot' category, and so on. 
+- In the `action`, send a metric or a function, such as accuracy, session, conversion, and others. For example, for MO use: version, framework, conversion_results, and so forth.
+- In the `label`, send more detailed data for your action (function). For example, send a string with the version name for the version or a string with the framework name for the framework. You can send a string with a wrapped dictionary. For example: "{param: value, version: value, error: value}".
+
+**NOTE:** If you want to track the connection between data (for example, on which operating systems error '123' occurred), send the data in one event and add it to the label together. If you send the data separately, you will not be able to identify the connection. Some data will be duplicated, as the same metric/function will be sent in different events.
+
+**TIP:**  To help automate the analytics, always send **all** the keys for a dictionary in the `label` variable. If a key is empty, send 'none' as its value. 
