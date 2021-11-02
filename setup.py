@@ -28,7 +28,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='openvino-telemetry',
-      version='0.0.0',
+      version='1.0.0',
       author='Intel® Corporation',
       license='OSI Approved :: Apache Software License',
       author_email='openvino_pushbot@intel.com',
@@ -45,7 +45,7 @@ setup(name='openvino-telemetry',
       },
       classifiers=[
           'Programming Language :: Python :: 3',
-          'OSI Approved :: Apache Software License',
+          'License :: OSI Approved :: Apache Software License',
           'Operating System :: OS Independent',
       ],
       install_requires=['requests>=2.20.0'],
