@@ -10,4 +10,6 @@ To send the data to Google Analytics, use the following three variables: `catego
 
 **NOTE:** If you want to track the connection between data (for example, on which operating systems error '123' occurred), send the data in one event and add it to the label together. Example: telemetry.send_event("mo", "error_info", "{os:ubuntu18, error:123}"). If you send the data separately, you will not be able to identify the connection. Some data will be duplicated since the same metric/function will be sent in different events.
 
+**NOTE:** Sending of telemetry data requires user's consent during installation of OpenVINO™ toolkit component. In case if control file does not exist on the system, or it contains "no" answer no data will be transmitted. 
+
 **TIP:**  To help automate the analytics, always send **all** the keys for a dictionary in the `label` variable. If a key is empty, send 'none' as its value. 
