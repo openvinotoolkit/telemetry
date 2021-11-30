@@ -1,4 +1,4 @@
-#  Intel® Distribution of OpenVINO™ Toolkit Telemetry
+#  OpenVINO™ Telemetry
 
 The implementation of the Python 3 library to send the telemetry data from the OpenVINO™ toolkit components.
 
