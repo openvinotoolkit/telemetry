@@ -1,9 +1,18 @@
 # Copyright (C) 2018-2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+from enum import Enum
+
 from .backend.backend import BackendRegistry
 from .utils import isip
 from .utils.sender import TelemetrySender
+from .utils.opt_in_checker import OptInChecker, ISIPCheckResult, DialogResult
+
+
+class OptInStatus(Enum):
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    UNDEFINED = "undefined"
 
 
 class SingletonMetaClass(type):
@@ -25,7 +34,9 @@ class Telemetry(metaclass=SingletonMetaClass):
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
                  backend: [str, None] = 'ga'):
         if app_name is not None:
-            self.consent = isip.isip_consent() == isip.ISIPConsent.APPROVED
+            opt_in_checker = OptInChecker()
+            opt_in_check_result = opt_in_checker.check()
+            self.consent = opt_in_check_result == ISIPCheckResult.ACCEPTED
 
             if tid is None:
                 print('[ WARNING ] Telemetry will not be sent as TID is not specified.')
@@ -33,6 +44,25 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.tid = tid
             self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
             self.sender = TelemetrySender()
+
+            if opt_in_check_result == ISIPCheckResult.NO_FILE:
+                if opt_in_checker.create_or_check_isip_dir():
+                    answer = ISIPCheckResult.DECLINED
+                    if not opt_in_checker.update_result(answer):
+                        pass
+                    try:
+                        answer = opt_in_checker.opt_in_dialog()
+                        if answer == DialogResult.ACCEPTED:
+                            self.consent = True
+                            self.backend.generate_new_uid_file()
+                            self.send_opt_in_event(OptInStatus.ACCEPTED)
+                            opt_in_checker.update_result(ISIPCheckResult.ACCEPTED)
+                        elif answer == DialogResult.TIMEOUT_REACHED:
+                            self.send_opt_in_event(OptInStatus.UNDEFINED, force_send=True)
+                        else:
+                            self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
+                    except KeyboardInterrupt:
+                        pass
         else:  # use already configured instance
             if self.sender is None:
                 raise RuntimeError('The first instantiation of the Telemetry should be done with the '
@@ -47,7 +77,8 @@ class Telemetry(metaclass=SingletonMetaClass):
         """
         self.sender.force_shutdown(timeout)
 
-    def send_event(self, event_category: str, event_action: str, event_label: str, event_value: int = 1, **kwargs):
+    def send_event(self, event_category: str, event_action: str, event_label: str, event_value: int = 1,
+                   force_send=False, **kwargs):
         """
         Send single event.
 
@@ -55,10 +86,11 @@ class Telemetry(metaclass=SingletonMetaClass):
         :param event_action: action of the event
         :param event_label: the label associated with the action
         :param event_value: the integer value corresponding to this label
+        :param force_send: forces to send event ignoring the consent value
         :param kwargs: additional parameters
         :return: None
         """
-        if self.consent:
+        if self.consent or force_send:
             self.sender.send(self.backend, self.backend.build_event_message(event_category, event_action, event_label,
                                                                             event_value, **kwargs))
 
@@ -91,3 +123,72 @@ class Telemetry(metaclass=SingletonMetaClass):
     def send_stack_trace(self, category: str, stack_trace: str, **kwargs):
         if self.consent:
             self.sender.send(self.backend, self.backend.build_stack_trace_message(category, stack_trace, **kwargs))
+
+    @staticmethod
+    def _update_opt_in_status(new_opt_in_status: bool):
+        """
+        Updates opt-in status.
+        :param new_opt_in_status: new opt-in status.
+        :return: None
+        """
+        app_name = 'opt_in_out'
+        # TODO: add functionality for getting openvino version
+        app_version = "UNKNOWN"
+        opt_in_checker = OptInChecker()
+        opt_in_check = opt_in_checker.check()
+
+        if new_opt_in_status:
+            updated = opt_in_checker.update_result(ISIPCheckResult.ACCEPTED)
+        else:
+            updated = opt_in_checker.update_result(ISIPCheckResult.DECLINED)
+        if not updated:
+            return
+
+        #TODO: Get tid from MO
+        telemetry = Telemetry(tid="UA-17808594-29", app_name=app_name, app_version=app_version)
+
+        if new_opt_in_status:
+            telemetry.backend.generate_new_uid_file()
+            if opt_in_check != ISIPCheckResult.ACCEPTED:
+                telemetry.send_opt_in_event(OptInStatus.ACCEPTED,
+                                            OptInStatus.DECLINED if opt_in_check == ISIPCheckResult.DECLINED else OptInStatus.UNDEFINED)
+            print("You have successfully opted in to send the telemetry data.")
+        else:
+            if opt_in_check != ISIPCheckResult.DECLINED:
+                telemetry.send_opt_in_event(OptInStatus.DECLINED,
+                                            OptInStatus.ACCEPTED if opt_in_check == ISIPCheckResult.ACCEPTED else OptInStatus.UNDEFINED,
+                                            force_send=True)
+            telemetry.backend.remove_uid_file()
+            print("You have successfully opted out to send the telemetry data.")
+
+    def send_opt_in_event(self, new_state: OptInStatus, prev_state: OptInStatus = OptInStatus.UNDEFINED,
+                          label: str = "", force_send=False):
+        """
+        Sends opt-in event.
+        :param new_state: new opt-in status.
+        :param prev_state: previous opt-in status.
+        :param label: the label with the information of opt-in status change.
+        :param force_send: forces to send event ignoring the consent value
+        :return: None
+        """
+        if new_state == OptInStatus.UNDEFINED:
+            self.send_event("opt_in", "timer_reached", label, force_send=force_send)
+        else:
+            label = prev_state.value + "_" + new_state.value
+            self.send_event("opt_in", new_state.value, label, force_send=force_send)
+
+    @staticmethod
+    def opt_in():
+        """
+        Enables sending anonymous telemetry data.
+        :return: None
+        """
+        Telemetry._update_opt_in_status(True)
+
+    @staticmethod
+    def opt_out():
+        """
+        Disables sending anonymous telemetry data.
+        :return: None
+        """
+        Telemetry._update_opt_in_status(False)

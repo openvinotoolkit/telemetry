@@ -40,6 +40,11 @@ setup(name='openvino-telemetry',
       packages=packages,
       package_dir={'openvino_telemetry': 'src'},
       py_modules=[],
+      entry_points={
+          'console_scripts': [
+              'opt_in_out = openvino_telemetry.opt_in_out:main',
+          ],
+      },
       cmdclass={
           'build_py': BuildCmd,
       },
