@@ -33,7 +33,6 @@ class Telemetry(metaclass=SingletonMetaClass):
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
                  backend: [str, None] = 'ga'):
         if app_name is not None:
-            print("telemetry init")
             opt_in_checker = OptInChecker()
             opt_in_check_result = opt_in_checker.check()
             self.consent = opt_in_check_result == ISIPCheckResult.ACCEPTED
