@@ -1,15 +1,14 @@
 # Copyright (C) 2018-2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import json
 import os
 import time
 from enum import Enum
 from platform import system
 from sys import stdin
 
-from .input_with_timeout import input_with_timeout
 from .colored_print import colored_print
+from .input_with_timeout import input_with_timeout
 
 
 class ISIPCheckResult(Enum):
@@ -232,11 +231,14 @@ class OptInChecker:
         Checks if user has accepted the collection of the information by checking the ISIP file.
         :return: opt-in dialog result
         """
+        print("telemetry check start")
         if not self._check_input_is_terminal() or self._check_run_in_notebook():
             return ISIPCheckResult.DECLINED
 
         if not os.path.exists(self.isip_file()):
+            print("no file found")
             return ISIPCheckResult.NO_FILE
+        print("something is wrong")
 
         if not self.isip_is_empty():
             _, content = self.get_info_from_isip()

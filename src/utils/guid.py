@@ -4,7 +4,7 @@
 import os
 from platform import system
 
-from .isip import isip_consent_base_dir
+from .opt_in_checker import OptInChecker
 
 
 def save_uid_to_file(file_name: str, uid: str):
@@ -61,7 +61,7 @@ def get_uid_path():
     if subdir is None:
         raise Exception('Failed to determine the operation system type')
 
-    return os.path.join(isip_consent_base_dir(), subdir)
+    return os.path.join(OptInChecker.isip_file_base_dir(), subdir)
 
 
 def remove_uid_file(file_name: str):
