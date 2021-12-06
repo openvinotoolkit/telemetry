@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-
 import openvino_telemetry as tm
+
+from opt_in_out_params import telemetry_params
 
 
 def main():
@@ -22,9 +23,9 @@ def main():
         exit(1)
 
     if args.opt_in:
-        tm.Telemetry.opt_in()
+        tm.Telemetry.opt_in(tid=telemetry_params['TID'])
     else:
-        tm.Telemetry.opt_out()
+        tm.Telemetry.opt_out(tid=telemetry_params['TID'])
     exit(0)
 
 

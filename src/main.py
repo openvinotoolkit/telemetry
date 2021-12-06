@@ -6,7 +6,7 @@ from enum import Enum
 from .backend.backend import BackendRegistry
 from .utils.sender import TelemetrySender
 from .utils.opt_in_checker import OptInChecker, ISIPCheckResult, DialogResult
-
+import os
 
 class OptInStatus(Enum):
     ACCEPTED = "accepted"
@@ -23,6 +23,11 @@ class SingletonMetaClass(type):
         if cls.__single_instance is None:
             cls.__single_instance = super(SingletonMetaClass, cls).__call__(*args, **kwargs)
         return cls.__single_instance
+
+
+def _get_ov_version():
+    # TODO: get openvino version in case if openvino is installed
+    return "UNKNOWN"
 
 
 class Telemetry(metaclass=SingletonMetaClass):
@@ -124,15 +129,15 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.sender.send(self.backend, self.backend.build_stack_trace_message(category, stack_trace, **kwargs))
 
     @staticmethod
-    def _update_opt_in_status(new_opt_in_status: bool):
+    def _update_opt_in_status(tid: str, new_opt_in_status: bool):
         """
         Updates opt-in status.
+        :param tid: ID of telemetry base.
         :param new_opt_in_status: new opt-in status.
         :return: None
         """
         app_name = 'opt_in_out'
-        # TODO: add functionality for getting openvino version
-        app_version = "UNKNOWN"
+        app_version = _get_ov_version()
         opt_in_checker = OptInChecker()
         opt_in_check = opt_in_checker.check()
 
@@ -143,9 +148,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         if not updated:
             return
 
-        tid_str = _try_get_tid()
-        #TODO: Get tid from MO
-        telemetry = Telemetry(tid=tid_str, app_name=app_name, app_version=app_version)
+        telemetry = Telemetry(tid=tid, app_name=app_name, app_version=app_version)
 
         if new_opt_in_status:
             telemetry.backend.generate_new_uid_file()
@@ -160,9 +163,6 @@ class Telemetry(metaclass=SingletonMetaClass):
                                             force_send=True)
             telemetry.backend.remove_uid_file()
             print("You have successfully opted out to send the telemetry data.")
-
-    def _try_get_tid()
-
 
     def send_opt_in_event(self, new_state: OptInStatus, prev_state: OptInStatus = OptInStatus.UNDEFINED,
                           label: str = "", force_send=False):
@@ -181,17 +181,19 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.send_event("opt_in", new_state.value, label, force_send=force_send)
 
     @staticmethod
-    def opt_in():
+    def opt_in(tid: str):
         """
         Enables sending anonymous telemetry data.
+        :param tid: ID of telemetry base.
         :return: None
         """
-        Telemetry._update_opt_in_status(True)
+        Telemetry._update_opt_in_status(tid, True)
 
     @staticmethod
-    def opt_out():
+    def opt_out(tid: str):
         """
         Disables sending anonymous telemetry data.
+        :param tid: ID of telemetry base.
         :return: None
         """
-        Telemetry._update_opt_in_status(False)
+        Telemetry._update_opt_in_status(tid, False)
