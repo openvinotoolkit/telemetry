@@ -66,7 +66,6 @@ class OptInChecker:
         if answer == "y" or answer == "yes":
             colored_print(OptInChecker.response_confirmation_accept)
             return DialogResult.ACCEPTED
-        colored_print(OptInChecker.response_confirmation_timer_reached)
         return DialogResult.TIMEOUT_REACHED
 
     def opt_in_dialog(self):
@@ -80,6 +79,10 @@ class OptInChecker:
         while time_passed < self.dialog_timeout and answer == DialogResult.TIMEOUT_REACHED:
             answer = self._ask_opt_in(self.opt_in_question_incorrect_input, self.dialog_timeout - time_passed)
             time_passed = time.time() - start_time
+
+        if answer == DialogResult.TIMEOUT_REACHED:
+            colored_print(OptInChecker.response_confirmation_timer_reached)
+
         return answer
 
     @staticmethod
