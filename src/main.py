@@ -25,11 +25,6 @@ class SingletonMetaClass(type):
         return cls.__single_instance
 
 
-def _get_ov_version():
-    # TODO: get openvino version in case if openvino is installed
-    return "UNKNOWN"
-
-
 class Telemetry(metaclass=SingletonMetaClass):
     """
     The main class to send telemetry data. It uses singleton pattern. The instance should be initialized with the
@@ -137,7 +132,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         :return: None
         """
         app_name = 'opt_in_out'
-        app_version = _get_ov_version()
+        app_version = '1.0.0'
         opt_in_checker = OptInChecker()
         opt_in_check = opt_in_checker.check()
 

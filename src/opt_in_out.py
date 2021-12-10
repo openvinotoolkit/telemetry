@@ -6,8 +6,6 @@
 import argparse
 import openvino_telemetry as tm
 
-from opt_in_out_params import telemetry_params
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -22,10 +20,11 @@ def main():
         print('Specify either "--opt_in" or "--opt_out" command line parameter.')
         exit(1)
 
+    tid = "UA-17808594-29"
     if args.opt_in:
-        tm.Telemetry.opt_in(tid=telemetry_params['TID'])
+        tm.Telemetry.opt_in(tid=tid)
     else:
-        tm.Telemetry.opt_out(tid=telemetry_params['TID'])
+        tm.Telemetry.opt_out(tid=tid)
     exit(0)
 
 
