@@ -4,6 +4,7 @@
 import os
 import time
 from enum import Enum
+from pathlib import Path
 from platform import system
 from sys import stdin
 
@@ -98,7 +99,7 @@ class OptInChecker:
         if platform == 'Windows':
             dir_to_check = '$LOCALAPPDATA'
         elif platform in ['Linux', 'Darwin']:
-            dir_to_check = '$HOME'
+            dir_to_check = Path.home()
 
         if dir_to_check is None:
             raise Exception('Failed to find location of the ISIP file.')
