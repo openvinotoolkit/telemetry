@@ -153,7 +153,7 @@ class OptInChecker:
             if not os.access(isip_dir, os.W_OK):
                 print("Failed to update opt-in status. "
                       "Cannot create directory for ISIP file, as directory is not writable: {}".format(isip_dir))
-                return
+                return False
             os.remove(isip_dir)
         if not os.path.exists(isip_dir):
             if not os.access(self.isip_file_base_dir(), os.W_OK):
