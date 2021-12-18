@@ -44,6 +44,9 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
             self.sender = TelemetrySender()
 
+            if self.consent and not self.backend.uid_file_initialized():
+                self.backend.generate_new_uid_file()
+
             if opt_in_check_result == ISIPCheckResult.NO_FILE:
                 if opt_in_checker.create_or_check_isip_dir():
                     answer = ISIPCheckResult.DECLINED
