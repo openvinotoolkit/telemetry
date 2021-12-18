@@ -50,7 +50,7 @@ class OptInCheckerTest(unittest.TestCase):
         os.chmod(test_subdir, 0o444)
 
         self.assertTrue(self.opt_in_checker.check() == ISIPCheckResult.NO_FILE)
-        self.assertFalse(self.opt_in_checker.create_or_check_isip_dir())
+        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
         self.remove_test_subdir()
 
     def test_dir_no_writable(self):
@@ -63,7 +63,7 @@ class OptInCheckerTest(unittest.TestCase):
         os.chmod(self.test_directory, 0o444)
 
         self.assertTrue(self.opt_in_checker.check() == ISIPCheckResult.NO_FILE)
-        self.assertFalse(self.opt_in_checker.create_or_check_isip_dir())
+        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
         os.chmod(self.test_directory, 0o777)
         self.remove_test_subdir()
 
@@ -76,7 +76,7 @@ class OptInCheckerTest(unittest.TestCase):
         os.chmod(test_subdir, 0o444)
 
         self.assertTrue(self.opt_in_checker.check() == ISIPCheckResult.NO_FILE)
-        self.assertFalse(self.opt_in_checker.create_or_check_isip_dir())
+        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
         os.chmod(test_subdir, 0o777)
         os.remove(test_subdir)
         self.remove_test_subdir()
