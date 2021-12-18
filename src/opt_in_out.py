@@ -20,7 +20,8 @@ def main():
         print('Specify either "--opt_in" or "--opt_out" command line parameter.')
         exit(1)
 
-    tid = None
+    tid = 'UA-186253784-1'
+    print('last version')
     if args.opt_in:
         tm.Telemetry.opt_in(tid=tid)
     else:

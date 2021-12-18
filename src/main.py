@@ -138,9 +138,9 @@ class Telemetry(metaclass=SingletonMetaClass):
         opt_in_check = opt_in_checker.check()
 
         prev_status = OptInStatus.UNDEFINED
-        if op_in_check == ISIPCheckResult.DECLINED:
+        if opt_in_check == ISIPCheckResult.DECLINED:
             prev_status = OptInStatus.DECLINED
-        elif op_in_check == ISIPCheckResult.ACCEPTED:
+        elif opt_in_check == ISIPCheckResult.ACCEPTED:
             prev_status = OptInStatus.ACCEPTED
 
         if new_opt_in_status:
@@ -177,7 +177,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         if new_state == OptInStatus.UNDEFINED:
             self.send_event("opt_in", "timer_reached", label, force_send=force_send)
         else:
-            label = "{prev_state:{}, new_state: {}}".format(prev_state.value, new_state.value)
+            label = "{{prev_state:{}, new_state: {}}}".format(prev_state.value, new_state.value)
             self.send_event("opt_in", new_state.value, label, force_send=force_send)
 
     @staticmethod
