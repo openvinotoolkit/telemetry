@@ -137,6 +137,12 @@ class Telemetry(metaclass=SingletonMetaClass):
         opt_in_checker = OptInChecker()
         opt_in_check = opt_in_checker.check()
 
+        prev_status = OptInStatus.UNDEFINED
+        if op_in_check == ISIPCheckResult.DECLINED:
+            prev_status = OptInStatus.DECLINED
+        elif op_in_check == ISIPCheckResult.ACCEPTED:
+            prev_status = OptInStatus.ACCEPTED
+
         if new_opt_in_status:
             updated = opt_in_checker.update_result(ISIPCheckResult.ACCEPTED)
         else:
@@ -149,14 +155,11 @@ class Telemetry(metaclass=SingletonMetaClass):
         if new_opt_in_status:
             telemetry.backend.generate_new_uid_file()
             if opt_in_check != ISIPCheckResult.ACCEPTED:
-                telemetry.send_opt_in_event(OptInStatus.ACCEPTED,
-                                            OptInStatus.DECLINED if opt_in_check == ISIPCheckResult.DECLINED else OptInStatus.UNDEFINED)
+                telemetry.send_opt_in_event(OptInStatus.ACCEPTED, prev_status)
             print("You have successfully opted in to send the telemetry data.")
         else:
             if opt_in_check != ISIPCheckResult.DECLINED:
-                telemetry.send_opt_in_event(OptInStatus.DECLINED,
-                                            OptInStatus.ACCEPTED if opt_in_check == ISIPCheckResult.ACCEPTED else OptInStatus.UNDEFINED,
-                                            force_send=True)
+                telemetry.send_opt_in_event(OptInStatus.DECLINED, prev_status, force_send=True)
             telemetry.backend.remove_uid_file()
             print("You have successfully opted out to send the telemetry data.")
 
