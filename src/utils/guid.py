@@ -52,16 +52,7 @@ def get_uid_path():
 
     :return: the directory with the the UUID file
     """
-    platform = system()
-    subdir = None
-    if platform == 'Windows':
-        subdir = 'Intel Corporation'
-    elif platform in ['Linux', 'Darwin']:
-        subdir = '.intel'
-    if subdir is None:
-        raise Exception('Failed to determine the operation system type')
-
-    return os.path.join(OptInChecker.isip_file_base_dir(), subdir)
+    return os.path.join(OptInChecker.isip_file_base_dir(), OptInChecker.isip_file_subdirectory())
 
 
 def remove_uid_file(file_name: str):

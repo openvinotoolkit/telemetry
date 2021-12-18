@@ -104,7 +104,11 @@ class OptInChecker:
         if dir_to_check is None:
             raise Exception('Failed to find location of the ISIP file.')
 
-        return os.path.expandvars(dir_to_check)
+        isip_base_dir = os.path.expandvars(dir_to_check)
+        if not os.path.isdir(isip_base_dir):
+            raise Exception('Failed to find location of the ISIP file.')
+
+        return isip_base_dir
 
     @staticmethod
     def isip_file_subdirectory():
@@ -116,7 +120,7 @@ class OptInChecker:
         if platform == 'Windows':
             return 'Intel Corporation'
         elif platform in ['Linux', 'Darwin']:
-            return 'intel'
+            return '.intel'
         raise Exception('Failed to find location of the ISIP file.')
 
     def isip_file(self):
@@ -148,7 +152,7 @@ class OptInChecker:
         if not os.path.isdir(isip_dir):
             if not os.access(isip_dir, os.W_OK):
                 print("Failed to update opt-in status. "
-                      "Cannot create a file when that file already exists: {}".format(isip_dir))
+                      "Cannot create directory for ISIP file, as directory is not writable: {}".format(isip_dir))
                 return
             os.remove(isip_dir)
         if not os.path.exists(isip_dir):

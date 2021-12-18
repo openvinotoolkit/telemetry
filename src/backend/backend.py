@@ -97,5 +97,6 @@ class TelemetryBackend(metaclass=TelemetryBackendMetaClass):
     def uid_file_initialized(self):
         """
         Should check if UID file is initialized.
+
         :return: True if UID file is initialized, otherwise False.
         """

@@ -127,6 +127,7 @@ class Telemetry(metaclass=SingletonMetaClass):
     def _update_opt_in_status(tid: str, new_opt_in_status: bool):
         """
         Updates opt-in status.
+
         :param tid: ID of telemetry base.
         :param new_opt_in_status: new opt-in status.
         :return: None
@@ -163,6 +164,7 @@ class Telemetry(metaclass=SingletonMetaClass):
                           label: str = "", force_send=False):
         """
         Sends opt-in event.
+
         :param new_state: new opt-in status.
         :param prev_state: previous opt-in status.
         :param label: the label with the information of opt-in status change.
@@ -172,13 +174,14 @@ class Telemetry(metaclass=SingletonMetaClass):
         if new_state == OptInStatus.UNDEFINED:
             self.send_event("opt_in", "timer_reached", label, force_send=force_send)
         else:
-            label = prev_state.value + "_" + new_state.value
+            label = "{prev_state:{}, new_state: {}}".format(prev_state.value, new_state.value)
             self.send_event("opt_in", new_state.value, label, force_send=force_send)
 
     @staticmethod
     def opt_in(tid: str):
         """
         Enables sending anonymous telemetry data.
+
         :param tid: ID of telemetry base.
         :return: None
         """
@@ -188,6 +191,7 @@ class Telemetry(metaclass=SingletonMetaClass):
     def opt_out(tid: str):
         """
         Disables sending anonymous telemetry data.
+
         :param tid: ID of telemetry base.
         :return: None
         """
