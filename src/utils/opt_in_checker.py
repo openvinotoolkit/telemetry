@@ -120,7 +120,7 @@ class OptInChecker:
         if platform == 'Windows':
             return 'Intel Corporation'
         elif platform in ['Linux', 'Darwin']:
-            return '.intel'
+            return 'intel'
         raise Exception('Failed to find location of the ISIP file.')
 
     def isip_file(self):
