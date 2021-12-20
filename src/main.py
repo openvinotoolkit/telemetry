@@ -155,13 +155,15 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         telemetry = Telemetry(tid=tid, app_name=app_name, app_version=app_version)
 
+        # In order to prevent sending of duplicate events, after multiple run of opt_in_out --opt_in/--opt_out
+        # we send opt_in event only if consent value is changed
         if new_opt_in_status:
             telemetry.backend.generate_new_uid_file()
-            if opt_in_check != ISIPCheckResult.ACCEPTED:
+            if prev_status != OptInStatus.ACCEPTED:
                 telemetry.send_opt_in_event(OptInStatus.ACCEPTED, prev_status)
             print("You have successfully opted in to send the telemetry data.")
         else:
-            if opt_in_check != ISIPCheckResult.DECLINED:
+            if prev_status != OptInStatus.DECLINED:
                 telemetry.send_opt_in_event(OptInStatus.DECLINED, prev_status, force_send=True)
             telemetry.backend.remove_uid_file()
             print("You have successfully opted out to send the telemetry data.")
