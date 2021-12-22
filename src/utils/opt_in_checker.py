@@ -148,19 +148,24 @@ class OptInChecker:
         Creates ISIP file directory and checks if the directory is writable.
         :return: True if the directory is created and writable, otherwise False
         """
+        if not os.path.exists(self.isip_file_base_dir()):
+            return False
         isip_dir = os.path.join(self.isip_file_base_dir(), self.isip_file_subdirectory())
+        if not os.path.exists(isip_dir):
+            if not os.path.exists(self.isip_file_base_dir()):
+                return False
+
+            if not os.access(self.isip_file_base_dir(), os.W_OK):
+                print("Failed to update opt-in status. "
+                      "Please allow write access to the following directory: {}".format(self.isip_file_base_dir()))
+                return False
+            os.mkdir(isip_dir)
         if not os.path.isdir(isip_dir):
             if not os.access(isip_dir, os.W_OK):
                 print("Failed to update opt-in status. "
                       "Cannot create directory for ISIP file, as directory is not writable: {}".format(isip_dir))
                 return False
             os.remove(isip_dir)
-        if not os.path.exists(isip_dir):
-            if not os.access(self.isip_file_base_dir(), os.W_OK):
-                print("Failed to update opt-in status. "
-                      "Please allow write access to the following directory: {}".format(self.isip_file_base_dir()))
-                return False
-            os.mkdir(isip_dir)
         if not os.access(isip_dir, os.W_OK):
             print("Failed to update opt-in status. "
                   "Please allow write access to the following directory: {}".format(isip_dir))
