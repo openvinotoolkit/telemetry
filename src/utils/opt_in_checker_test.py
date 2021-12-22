@@ -109,14 +109,6 @@ class OptInCheckerTest(unittest.TestCase):
         self.init_opt_in_checker()
         test_subdir = os.path.join(self.test_directory, self.test_subdir)
         os.rmdir(test_subdir)
-        os.rmdir(test_directory)
-        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
-        self.remove_test_subdir()
-
-    def test_base_directory_does_not_exist(self):
-        self.init_opt_in_checker()
-        test_subdir = os.path.join(self.test_directory, self.test_subdir)
-        os.rmdir(test_subdir)
         os.rmdir(self.test_directory)
         self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
         self.remove_test_subdir()
