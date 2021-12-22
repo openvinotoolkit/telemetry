@@ -32,43 +32,66 @@ class Telemetry(metaclass=SingletonMetaClass):
     """
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
                  backend: [str, None] = 'ga'):
-        if app_name is not None:
-            opt_in_checker = OptInChecker()
-            opt_in_check_result = opt_in_checker.check()
-            self.consent = opt_in_check_result == ISIPCheckResult.ACCEPTED
-
-            if tid is None:
-                print('[ WARNING ] Telemetry will not be sent as TID is not specified.')
-
-            self.tid = tid
-            self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
-            self.sender = TelemetrySender()
-
-            if self.consent and not self.backend.uid_file_initialized():
-                self.backend.generate_new_uid_file()
-
-            if opt_in_check_result == ISIPCheckResult.NO_FILE:
-                if opt_in_checker.create_or_check_isip_dir():
-                    answer = ISIPCheckResult.DECLINED
-                    if not opt_in_checker.update_result(answer):
-                        pass
-                    try:
-                        answer = opt_in_checker.opt_in_dialog()
-                        if answer == DialogResult.ACCEPTED:
-                            self.consent = True
-                            self.backend.generate_new_uid_file()
-                            self.send_opt_in_event(OptInStatus.ACCEPTED)
-                            opt_in_checker.update_result(ISIPCheckResult.ACCEPTED)
-                        elif answer == DialogResult.TIMEOUT_REACHED:
-                            self.send_opt_in_event(OptInStatus.UNDEFINED, force_send=True)
-                        else:
-                            self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
-                    except KeyboardInterrupt:
-                        pass
-        else:  # use already configured instance
+        # The case when instance is already configured
+        if app_name is None:
             if not hasattr(self, 'sender') or self.sender is None:
                 raise RuntimeError('The first instantiation of the Telemetry should be done with the '
                                    'application name, version and TID.')
+            return
+
+        opt_in_checker = OptInChecker()
+        opt_in_check_result = opt_in_checker.check()
+        self.consent = opt_in_check_result == ISIPCheckResult.ACCEPTED
+
+        if tid is None:
+            print('[ WARNING ] Telemetry will not be sent as TID is not specified.')
+
+        self.tid = tid
+        self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
+        self.sender = TelemetrySender()
+
+        if self.consent and not self.backend.uid_file_initialized():
+            self.backend.generate_new_uid_file()
+
+        # ISIP file may be absent, for example, during the first run of Openvino tool.
+        # In this case we trigger opt-in dialog that asks user permission for sending telemetry.
+        if opt_in_check_result == ISIPCheckResult.NO_FILE:
+            if opt_in_checker.create_or_check_isip_dir():
+                answer = ISIPCheckResult.DECLINED
+                # create ISIP file if possible with "0" value
+                if not opt_in_checker.update_result(answer):
+                    pass
+                try:
+                    # run opt-in dialog
+                    answer = opt_in_checker.opt_in_dialog()
+                    if answer == DialogResult.ACCEPTED:
+                        # If the dialog result is "accepted" we generate new GUID file and update ISIP
+                        # file with "1" value. Telemetry data will be collected in this case.
+                        self.consent = True
+                        self.backend.generate_new_uid_file()
+                        self.send_opt_in_event(OptInStatus.ACCEPTED)
+
+                        # Here we send telemetry with "accepted" dialog result
+                        opt_in_checker.update_result(ISIPCheckResult.ACCEPTED)
+                    elif answer == DialogResult.TIMEOUT_REACHED:
+                        # If timer was reached and we have no response from user, we should not send
+                        # any data except for dialog result.
+                        # At this point we have already created ISIP file with "0" value,
+                        # which means that no telemetry data will be collected in further functions.
+                        # As ISIP file exists on the system the dialog won't be shown again.
+
+                        # Here we send telemetry with "timer reached" dialog result
+                        self.send_opt_in_event(OptInStatus.UNDEFINED, force_send=True)
+                    else:
+                        # If the dialog result is "declined" we should not send any data except for dialog result.
+                        # At this point we have already created ISIP file with "0" value,
+                        # which means that no telemetry data will be collected in further functions.
+                        # As ISIP file exists on the system the dialog won't be shown again.
+
+                        # Here we send telemetry with "declined" dialog result
+                        self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
+                except KeyboardInterrupt:
+                    pass
 
     def force_shutdown(self, timeout: float = 1.0):
         """
@@ -136,7 +159,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         :return: None
         """
         app_name = 'opt_in_out'
-        app_version = '1.0.0'
+        app_version = Telemetry.get_version()
         opt_in_checker = OptInChecker()
         opt_in_check = opt_in_checker.check()
 
@@ -204,3 +227,10 @@ class Telemetry(metaclass=SingletonMetaClass):
         :return: None
         """
         Telemetry._update_opt_in_status(tid, False)
+
+    @staticmethod
+    def get_version():
+        """
+        Returns version of telemetry library.
+        """
+        return '1.0.0'

@@ -19,8 +19,7 @@ class InputWithTimeoutTest(unittest.TestCase):
         self.backend = BackendRegistry.get_backend('ga')("test_backend", "NONE")
         OptInChecker.isip_file_base_dir = MagicMock(return_value=self.test_directory)
         OptInChecker.isip_file_subdirectory = MagicMock(return_value=self.test_subdir)
-        self.guid = os.path.join(self.test_directory, self.test_subdir, self.backend.uid_filename)
-        self.isip = os.path.join(self.test_directory, self.test_subdir, self.backend.uid_filename)
+        self.uid_path = os.path.join(self.test_directory, self.test_subdir, self.backend.uid_filename)
 
         self.clean_test_dir()
 
@@ -29,10 +28,8 @@ class InputWithTimeoutTest(unittest.TestCase):
 
     def clean_test_dir(self):
         test_subdir = os.path.join(self.test_directory, self.test_subdir)
-        if os.path.exists(self.isip):
-            os.remove(self.isip)
-        if os.path.exists(self.guid):
-            os.remove(self.guid)
+        if os.path.exists(self.uid_path):
+            os.remove(self.uid_path)
         if os.path.exists(test_subdir):
             os.rmdir(test_subdir)
         if os.path.exists(self.test_directory):
@@ -44,7 +41,7 @@ class InputWithTimeoutTest(unittest.TestCase):
         """
         self.init_backend()
         self.backend.generate_new_uid_file()
-        self.assertTrue(os.path.exists(self.guid))
+        self.assertTrue(os.path.exists(self.uid_path))
         self.assertTrue(self.backend.uid_file_initialized())
         self.clean_test_dir()
 
@@ -54,9 +51,9 @@ class InputWithTimeoutTest(unittest.TestCase):
         """
         self.init_backend()
         self.backend.generate_new_uid_file()
-        self.assertTrue(os.path.exists(self.guid))
+        self.assertTrue(os.path.exists(self.uid_path))
         self.assertTrue(self.backend.uid_file_initialized())
         self.backend.remove_uid_file()
-        self.assertFalse(os.path.exists(self.guid))
+        self.assertFalse(os.path.exists(self.uid_path))
         self.assertFalse(self.backend.uid_file_initialized())
         self.clean_test_dir()

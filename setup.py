@@ -10,6 +10,7 @@ $ python setup.py sdist bdist_wheel
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
+from src.main import Telemetry
 
 
 class BuildCmd(build_py):
@@ -28,7 +29,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='openvino-telemetry',
-      version='1.0.0',
+      version=Telemetry.get_version(),
       author='Intel® Corporation',
       license='OSI Approved :: Apache Software License',
       author_email='openvino_pushbot@intel.com',
