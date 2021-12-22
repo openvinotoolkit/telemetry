@@ -98,3 +98,25 @@ class OptInCheckerTest(unittest.TestCase):
         self.assertTrue(result == ISIPCheckResult.DECLINED)
         self.remove_test_subdir()
 
+    def test_subdirectory_does_not_exist(self):
+        self.init_opt_in_checker()
+        test_subdir = os.path.join(self.test_directory, self.test_subdir)
+        os.rmdir(test_subdir)
+        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is True)
+        self.remove_test_subdir()
+
+    def test_base_directory_does_not_exist(self):
+        self.init_opt_in_checker()
+        test_subdir = os.path.join(self.test_directory, self.test_subdir)
+        os.rmdir(test_subdir)
+        os.rmdir(test_directory)
+        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
+        self.remove_test_subdir()
+
+    def test_base_directory_does_not_exist(self):
+        self.init_opt_in_checker()
+        test_subdir = os.path.join(self.test_directory, self.test_subdir)
+        os.rmdir(test_subdir)
+        os.rmdir(self.test_directory)
+        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
+        self.remove_test_subdir()
