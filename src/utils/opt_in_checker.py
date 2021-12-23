@@ -156,18 +156,18 @@ class OptInChecker:
                 return False
 
             if not os.access(self.isip_file_base_dir(), os.W_OK):
-                print("Failed to update opt-in status. "
+                print("[ WARNING ] Failed to create ISIP file. "
                       "Please allow write access to the following directory: {}".format(self.isip_file_base_dir()))
                 return False
             os.mkdir(isip_dir)
         if not os.path.isdir(isip_dir):
             if not os.access(isip_dir, os.W_OK):
-                print("Failed to update opt-in status. "
+                print("[ WARNING ] Failed to create ISIP file. "
                       "Cannot create directory for ISIP file, as directory is not writable: {}".format(isip_dir))
                 return False
             os.remove(isip_dir)
         if not os.access(isip_dir, os.W_OK):
-            print("Failed to update opt-in status. "
+            print("[ WARNING ] Failed to create ISIP file. "
                   "Please allow write access to the following directory: {}".format(isip_dir))
             return False
         return True
@@ -182,7 +182,7 @@ class OptInChecker:
             if not self.create_new_isip_file():
                 return False
         if not os.access(self.isip_file(), os.W_OK):
-            print("Failed to update opt-in status. "
+            print("[ WARNING ] Failed to update opt-in status. "
                   "Please allow write access to the following file: {}".format(self.isip_file()))
             return False
         try:
@@ -256,5 +256,5 @@ class OptInChecker:
                 return ISIPCheckResult.ACCEPTED
             elif content == "0":
                 return ISIPCheckResult.DECLINED
-        print('Incorrect format of the file with opt-in status.')
+        print('[ WARNING ] Incorrect format of the file with opt-in status.')
         return ISIPCheckResult.DECLINED

@@ -64,6 +64,6 @@ def remove_uid_file(file_name: str):
     uid_file = os.path.join(get_uid_path(), file_name)
     if os.path.exists(uid_file):
         if not os.access(uid_file, os.W_OK):
-            print("Failed to remove UID file {}.".format(uid_file))
+            print("[ WARNING ] Failed to remove UID file {}.".format(uid_file))
             return
         os.remove(uid_file)
