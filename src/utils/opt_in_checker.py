@@ -28,7 +28,7 @@ class OptInChecker:
     dialog_timeout = 50  # seconds
     path_to_opt_in_out_script = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     opt_in_out_script_name = "opt_in_out"
-    doc_link = "http://openvino-docs.inn.intel.com/"
+    doc_link = "https://docs.openvino.ai/"
     opt_in_out_script_run_command = "\'{} --opt_out\'".format(opt_in_out_script_name)
     opt_in_question = "With your permission, Intel would like to collect occasional (anonymous) tool usage such " \
                       "as software installation, development environment, and usage responses to improve our product " \
