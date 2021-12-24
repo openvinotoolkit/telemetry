@@ -30,14 +30,6 @@ class OptInChecker:
     opt_in_out_script_name = "opt_in_out"
     doc_link = "docs.openvino.ai"
     opt_in_out_script_run_command = "\'{} --opt_out\'".format(opt_in_out_script_name)
-    opt_in_question = "With your permission, Intel would like to collect occasional (anonymous) tool usage such " \
-                      "as software installation, development environment, and usage responses to improve our product " \
-                      "and your developer experience.  This confidential data will be kept a period of time " \
-                      "to study trends, and of course you can opt out at any time in the future by running {}. " \
-                      "We really appreciate your help by accepting (just type \"Y\" at the prompt) to show your " \
-                      "consent to the collection of this data, a \"N\" will prevent the anonymous data from " \
-                      "being sent back to Intel. " \
-                      "Thanks for replying with a \"Y\"!".format(opt_in_out_script_run_command)
     opt_in_question = "Intel would like your permission to collect software performance and usage data for the " \
                       "purpose of improving Intel products and services. This data will be collected directly " \
                       "by Intel or through the use of Google Analytics. This data will be stored in countries " \
@@ -60,7 +52,7 @@ class OptInChecker:
         """
         colored_print(question)
         answer = input_with_timeout(prompt='>>', timeout=timeout)
-        answer = answer.lower()
+        answer = answer.lower().strip()
         if answer == "n" or answer == "no":
             colored_print(OptInChecker.response_confirmation_decline)
             return DialogResult.DECLINED
