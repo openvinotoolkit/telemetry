@@ -80,3 +80,23 @@ class TelemetryBackend(metaclass=TelemetryBackendMetaClass):
         """
         Should return the Message object corresponding to the session end.
         """
+
+    @abc.abstractmethod
+    def remove_uid_file(self):
+        """
+        Should remove UID file.
+        """
+
+    @abc.abstractmethod
+    def generate_new_uid_file(self):
+        """
+        Should generate new UID file.
+        """
+
+    @abc.abstractmethod
+    def uid_file_initialized(self):
+        """
+        Should check if UID file is initialized.
+
+        :return: True if UID file is initialized, otherwise False.
+        """

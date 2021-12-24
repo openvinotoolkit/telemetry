@@ -4,7 +4,7 @@
 import os
 from platform import system
 
-from .isip import isip_consent_base_dir
+from .opt_in_checker import OptInChecker
 
 
 def save_uid_to_file(file_name: str, uid: str):
@@ -52,13 +52,18 @@ def get_uid_path():
 
     :return: the directory with the the UUID file
     """
-    platform = system()
-    subdir = None
-    if platform == 'Windows':
-        subdir = 'Intel Corporation'
-    elif platform in ['Linux', 'Darwin']:
-        subdir = '.intel'
-    if subdir is None:
-        raise Exception('Failed to determine the operation system type')
+    return os.path.join(OptInChecker.isip_file_base_dir(), OptInChecker.isip_file_subdirectory())
 
-    return os.path.join(isip_consent_base_dir(), subdir)
+
+def remove_uid_file(file_name: str):
+    """
+    Removes UID file.
+    :param file_name: name of the file with the UID
+    :return: None
+    """
+    uid_file = os.path.join(get_uid_path(), file_name)
+    if os.path.exists(uid_file):
+        if not os.access(uid_file, os.W_OK):
+            print("[ WARNING ] Failed to remove UID file {}.".format(uid_file))
+            return
+        os.remove(uid_file)
