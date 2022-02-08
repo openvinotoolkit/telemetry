@@ -76,7 +76,15 @@ class OptInCheckerTest(unittest.TestCase):
         os.chmod(test_subdir, 0o444)
 
         self.assertTrue(self.opt_in_checker.check() == ISIPCheckResult.NO_FILE)
-        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is True)
+
+        # Linux allows delete read-only files, while Windows doesn't
+        if system() == 'Windows':
+            self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
+            os.chmod(test_subdir, 0o777)
+            os.remove(test_subdir)
+        else:
+            self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is True)
+
         self.remove_test_subdir()
 
     def test_incorrect_control_file_format(self):
