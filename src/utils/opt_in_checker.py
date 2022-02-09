@@ -140,25 +140,44 @@ class OptInChecker:
         Creates ISIP file directory and checks if the directory is writable.
         :return: True if the directory is created and writable, otherwise False
         """
-        if not os.path.exists(self.isip_file_base_dir()):
+        base_dir = self.isip_file_base_dir()
+        base_is_dir = os.path.isdir(base_dir)
+        base_dir_exists = os.path.exists(base_dir)
+        base_w_access = os.access(base_dir, os.W_OK)
+
+        if not base_dir_exists or not base_is_dir:
             return False
+        if not base_w_access:
+            print("[ WARNING ] Failed to create ISIP file. "
+                  "Please allow write access to the following directory: {}".format(base_dir))
+            return False
+
         isip_dir = os.path.join(self.isip_file_base_dir(), self.isip_file_subdirectory())
-        if not os.path.exists(isip_dir):
-            if not os.path.exists(self.isip_file_base_dir()):
+        isip_is_dir = os.path.isdir(isip_dir)
+        isip_dir_exists = os.path.exists(isip_dir)
+
+        # If ISIP path exists and it is not directory, we try to remove it
+        if isip_dir_exists and not isip_is_dir:
+            try:
+                os.remove(isip_dir)
+            except:
+                print('[ WARNING ] Unable to create directory for ISIP file, '
+                      'as {} is invalid directory.'.format(isip_dir))
                 return False
 
-            if not os.access(self.isip_file_base_dir(), os.W_OK):
-                print("[ WARNING ] Failed to create ISIP file. "
-                      "Please allow write access to the following directory: {}".format(self.isip_file_base_dir()))
+        if not os.path.exists(isip_dir):
+            try:
+                os.mkdir(isip_dir)
+
+                # check that directory is created
+                if not os.path.exists(isip_dir):
+                    return False
+            except Exception as e:
+                print('[ WARNING ] Failed to create directory for ISIP file: {}'.format(str(e)))
                 return False
-            os.mkdir(isip_dir)
-        if not os.path.isdir(isip_dir):
-            if not os.access(isip_dir, os.W_OK):
-                print("[ WARNING ] Failed to create ISIP file. "
-                      "Cannot create directory for ISIP file, as directory is not writable: {}".format(isip_dir))
-                return False
-            os.remove(isip_dir)
-        if not os.access(isip_dir, os.W_OK):
+
+        isip_w_access = os.access(isip_dir, os.W_OK)
+        if not isip_w_access:
             print("[ WARNING ] Failed to create ISIP file. "
                   "Please allow write access to the following directory: {}".format(isip_dir))
             return False
