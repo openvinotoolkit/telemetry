@@ -240,6 +240,12 @@ class OptInChecker:
 
     @staticmethod
     def _check_main_process():
+        platform = system()
+        if platform == 'Windows':
+            # In Windows 'os' module does not have getpid() and getsid(),
+            # so the following checks are not applicable
+            return True
+
         # Check that current process is the leader of process group
         if os.getpid() != os.getpgid(0):
             return False
