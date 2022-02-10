@@ -6,7 +6,7 @@ import time
 from enum import Enum
 from pathlib import Path
 from platform import system
-from sys import stdin, stdout
+from sys import stdin
 
 from .colored_print import colored_print
 from .input_with_timeout import input_with_timeout
