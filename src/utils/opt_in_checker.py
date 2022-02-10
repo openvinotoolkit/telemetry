@@ -256,6 +256,7 @@ class OptInChecker:
                 return False
         except:
             return True
+        return True
 
     @staticmethod
     def _check_run_in_notebook():
