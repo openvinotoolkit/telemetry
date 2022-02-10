@@ -246,14 +246,16 @@ class OptInChecker:
             # so the following checks are not applicable
             return True
 
-        # Check that current process is the leader of process group
-        if os.getpid() != os.getpgid(0):
-            return False
+        try:
+            # Check that current process is the leader of process group
+            if os.getpid() != os.getpgid(0):
+                return False
 
-        # Check that parent process is in same session as current process
-        if os.getsid(os.getppid()) != os.getsid(0):
-            return False
-        return True
+            # Check that parent process is in same session as current process
+            if os.getsid(os.getppid()) != os.getsid(0):
+                return False
+        except:
+            return True
 
     @staticmethod
     def _check_run_in_notebook():
@@ -272,10 +274,10 @@ class OptInChecker:
         Checks if user has accepted the collection of the information by checking the ISIP file.
         :return: opt-in dialog result
         """
-        if not self._check_input_is_terminal() or self._check_run_in_notebook():
+        if not self._check_main_process():
             return ISIPCheckResult.DECLINED
 
-        if not self._check_main_process():
+        if not self._check_input_is_terminal() or self._check_run_in_notebook():
             return ISIPCheckResult.DECLINED
 
         if not os.path.exists(self.isip_file()):
