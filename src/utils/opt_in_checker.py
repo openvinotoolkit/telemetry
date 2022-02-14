@@ -239,6 +239,29 @@ class OptInChecker:
         return stdin.isatty()
 
     @staticmethod
+    def _check_main_process():
+        platform = system()
+        if platform == 'Windows':
+            # In Windows 'os' module does not have getpid() and getsid(),
+            # so the following checks are not applicable.
+            # Subprocess check in Windows is handled by self._check_input_is_terminal(),
+            # which does not work for Unix subprocesses.
+            return True
+
+        try:
+            # Check that current process is the leader of process group
+            if os.getpid() != os.getpgid(0):
+                return False
+
+            # Check that parent process is in same session as current process
+            if os.getsid(os.getppid()) != os.getsid(0):
+                return False
+        except:
+            # If we couldn't check main process, disable opt-in dialog
+            return False
+        return True
+
+    @staticmethod
     def _check_run_in_notebook():
         """
         Checks that script is executed in Jupyter Notebook.
@@ -255,6 +278,9 @@ class OptInChecker:
         Checks if user has accepted the collection of the information by checking the ISIP file.
         :return: opt-in dialog result
         """
+        if not self._check_main_process():
+            return ISIPCheckResult.DECLINED
+
         if not self._check_input_is_terminal() or self._check_run_in_notebook():
             return ISIPCheckResult.DECLINED
 

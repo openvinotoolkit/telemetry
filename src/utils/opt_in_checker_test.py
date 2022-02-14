@@ -22,6 +22,7 @@ class OptInCheckerTest(unittest.TestCase):
         self.opt_in_checker.isip_file_base_dir = MagicMock(return_value=self.test_directory)
         self.opt_in_checker.isip_file_subdirectory = MagicMock(return_value=self.test_subdir)
         self.opt_in_checker._check_input_is_terminal = MagicMock(return_value=True)
+        self.opt_in_checker._check_main_process = MagicMock(return_value=True)
         if not os.path.exists(self.test_directory):
             os.mkdir(os.path.join(self.test_directory))
         test_subdir = os.path.join(self.test_directory, self.test_subdir)
@@ -33,8 +34,10 @@ class OptInCheckerTest(unittest.TestCase):
         if os.path.exists(self.opt_in_checker.isip_file()):
             os.remove(self.opt_in_checker.isip_file())
         if os.path.exists(test_subdir):
+            os.chmod(test_subdir, 0o777)
             os.rmdir(test_subdir)
         if os.path.exists(self.test_directory):
+            os.chmod(self.test_directory, 0o777)
             os.rmdir(os.path.join(self.test_directory))
 
     def test_subdir_no_writable(self):
