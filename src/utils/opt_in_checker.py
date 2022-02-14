@@ -243,7 +243,9 @@ class OptInChecker:
         platform = system()
         if platform == 'Windows':
             # In Windows 'os' module does not have getpid() and getsid(),
-            # so the following checks are not applicable
+            # so the following checks are not applicable.
+            # Subprocess check in Windows is handled by self._check_input_is_terminal(),
+            # which does not work for Unix subprocesses.
             return True
 
         try:
