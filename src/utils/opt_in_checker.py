@@ -255,7 +255,8 @@ class OptInChecker:
             if os.getsid(os.getppid()) != os.getsid(0):
                 return False
         except:
-            return True
+            # If we couldn't check main process, disable opt-in dialog
+            return False
         return True
 
     @staticmethod
