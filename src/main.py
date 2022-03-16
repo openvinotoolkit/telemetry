@@ -46,7 +46,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         self.consent = opt_in_check_result == ISIPCheckResult.ACCEPTED
 
         if tid is None:
-            log.warning('Telemetry will not be sent as TID is not specified.')
+            log.warning("Telemetry will not be sent as TID is not specified.")
 
         self.tid = tid
         self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)

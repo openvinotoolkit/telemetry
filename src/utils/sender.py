@@ -58,4 +58,4 @@ class TelemetrySender:
             self.executor._threads.clear()
             futures.thread._threads_queues.clear()
         except Exception as err:
-            log.warning('Failed to clear threads queue with the following error: {}'.format(err))
+            log.warning("Failed to clear threads queue with the following error: {}".format(err))

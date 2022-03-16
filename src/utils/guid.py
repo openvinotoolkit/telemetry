@@ -19,7 +19,7 @@ def save_uid_to_file(file_name: str, uid: str):
         with open(file_name, 'w') as file:
             file.write(uid)
     except Exception as e:
-        log.warning('Failed to generate the UID file: {}'.format(str(e)))
+        log.warning("Failed to generate the UID file: {}".format(str(e)))
         return False
     return True
 
