@@ -1,6 +1,7 @@
 # Copyright (C) 2018-2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import logging as log
 import uuid
 
 from .backend import TelemetryBackend
@@ -34,7 +35,8 @@ class GABackend(TelemetryBackend):
             import requests
             requests.post(self.backend_url, message.attrs, timeout=1.0)
         except Exception as err:
-            print('[ WARNING ] Failed to send event with the following error: {}'.format(err))
+            print("*")
+            log.warning('Failed to send event with the following error: {}'.format(err))
 
     def build_event_message(self, event_category: str, event_action: str, event_label: str, event_value: int = 1,
                             **kwargs):

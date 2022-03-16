@@ -1,6 +1,7 @@
 # Copyright (C) 2018-2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import logging as log
 import os
 import time
 from enum import Enum
@@ -148,8 +149,8 @@ class OptInChecker:
         if not base_dir_exists or not base_is_dir:
             return False
         if not base_w_access:
-            print("[ WARNING ] Failed to create ISIP file. "
-                  "Please allow write access to the following directory: {}".format(base_dir))
+            log.warning("Failed to create ISIP file. "
+                        "Please allow write access to the following directory: {}".format(base_dir))
             return False
 
         isip_dir = os.path.join(self.isip_file_base_dir(), self.isip_file_subdirectory())
@@ -161,8 +162,7 @@ class OptInChecker:
             try:
                 os.remove(isip_dir)
             except:
-                print('[ WARNING ] Unable to create directory for ISIP file, '
-                      'as {} is invalid directory.'.format(isip_dir))
+                log.warning("Unable to create directory for ISIP file, as {} is invalid directory.".format(isip_dir))
                 return False
 
         if not os.path.exists(isip_dir):
@@ -173,13 +173,13 @@ class OptInChecker:
                 if not os.path.exists(isip_dir):
                     return False
             except Exception as e:
-                print('[ WARNING ] Failed to create directory for ISIP file: {}'.format(str(e)))
+                log.warning("Failed to create directory for ISIP file: {}".format(str(e)))
                 return False
 
         isip_w_access = os.access(isip_dir, os.W_OK)
         if not isip_w_access:
-            print("[ WARNING ] Failed to create ISIP file. "
-                  "Please allow write access to the following directory: {}".format(isip_dir))
+            log.warning("Failed to create ISIP file. "
+                        "Please allow write access to the following directory: {}".format(isip_dir))
             return False
         return True
 
@@ -193,8 +193,8 @@ class OptInChecker:
             if not self.create_new_isip_file():
                 return False
         if not os.access(self.isip_file(), os.W_OK):
-            print("[ WARNING ] Failed to update opt-in status. "
-                  "Please allow write access to the following file: {}".format(self.isip_file()))
+            log.warning("Failed to update opt-in status. "
+                        "Please allow write access to the following file: {}".format(self.isip_file()))
             return False
         try:
             with open(self.isip_file(), 'w') as file:
@@ -293,5 +293,5 @@ class OptInChecker:
                 return ISIPCheckResult.ACCEPTED
             elif content == "0":
                 return ISIPCheckResult.DECLINED
-        print('[ WARNING ] Incorrect format of the file with opt-in status.')
+        log.warning("Incorrect format of the file with opt-in status.")
         return ISIPCheckResult.DECLINED

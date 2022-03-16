@@ -1,6 +1,7 @@
 # Copyright (C) 2018-2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import logging as log
 import os
 from platform import system
 
@@ -18,7 +19,7 @@ def save_uid_to_file(file_name: str, uid: str):
         with open(file_name, 'w') as file:
             file.write(uid)
     except Exception as e:
-        print('[ WARNING ] Failed to generate the UID file: {}'.format(str(e)))
+        log.warning('Failed to generate the UID file: {}'.format(str(e)))
         return False
     return True
 
@@ -64,6 +65,6 @@ def remove_uid_file(file_name: str):
     uid_file = os.path.join(get_uid_path(), file_name)
     if os.path.exists(uid_file):
         if not os.access(uid_file, os.W_OK):
-            print("[ WARNING ] Failed to remove UID file {}.".format(uid_file))
+            log.warning("Failed to remove UID file {}.".format(uid_file))
             return
         os.remove(uid_file)
