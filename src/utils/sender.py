@@ -1,6 +1,7 @@
 # Copyright (C) 2018-2021 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import logging as log
 import threading
 from concurrent import futures
 from time import sleep
@@ -57,4 +58,4 @@ class TelemetrySender:
             self.executor._threads.clear()
             futures.thread._threads_queues.clear()
         except Exception as err:
-            print('[ WARNING ] Failed to clear threads queue with the following error: {}'.format(err))
+            log.warning("Failed to clear threads queue with the following error: {}".format(err))
