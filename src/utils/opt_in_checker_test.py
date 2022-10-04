@@ -121,3 +121,12 @@ class OptInCheckerTest(unittest.TestCase):
         os.rmdir(self.test_directory)
         self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
         self.remove_test_subdir()
+
+    def test_send_telemetry_from_non_cmd_tool(self):
+        self.init_opt_in_checker()
+        self.opt_in_checker._check_input_is_terminal = MagicMock(return_value=False)
+        with open(self.opt_in_checker.isip_file(), 'w') as file:
+            file.write("1")
+        result = self.opt_in_checker.check()
+        self.assertTrue(result == ISIPCheckResult.ACCEPTED)
+        self.remove_test_subdir()

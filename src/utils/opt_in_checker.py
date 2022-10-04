@@ -278,13 +278,12 @@ class OptInChecker:
         Checks if user has accepted the collection of the information by checking the ISIP file.
         :return: opt-in dialog result
         """
-        if not self._check_main_process():
-            return ISIPCheckResult.DECLINED
-
-        if not self._check_input_is_terminal() or self._check_run_in_notebook():
-            return ISIPCheckResult.DECLINED
-
         if not os.path.exists(self.isip_file()):
+            if not self._check_main_process():
+                return ISIPCheckResult.DECLINED
+
+            if not self._check_input_is_terminal() or self._check_run_in_notebook():
+                return ISIPCheckResult.DECLINED
             return ISIPCheckResult.NO_FILE
 
         if not self.isip_is_empty():
