@@ -42,6 +42,7 @@ class OptInChecker:
     response_confirmation_accept = "The selected option was to collect telemetry data."
     response_confirmation_decline = "The selected option was NOT to collect telemetry data."
     response_confirmation_timer_reached = "The timer has expired and no data will be collected."
+    consent_file_comment_message = "Test message."
 
     @staticmethod
     def _ask_opt_in(question: str, timeout: int):
@@ -121,7 +122,7 @@ class OptInChecker:
         Returns the ISIP file path.
         :return: ISIP file path.
         """
-        return os.path.join(self.isip_file_base_dir(), self.isip_file_subdirectory(), "isip")
+        return os.path.join(self.isip_file_base_dir(), self.isip_file_subdirectory(), "openvino_telemetry")
 
     def create_new_isip_file(self):
         """
@@ -199,9 +200,9 @@ class OptInChecker:
         try:
             with open(self.isip_file(), 'w') as file:
                 if result == ISIPCheckResult.ACCEPTED:
-                    file.write("1")
+                    file.write("1\n{}".format(self.consent_file_comment_message))
                 else:
-                    file.write("0")
+                    file.write("0\n{}".format(self.consent_file_comment_message))
         except Exception:
             return False
         return True
@@ -288,9 +289,9 @@ class OptInChecker:
 
         if not self.isip_is_empty():
             _, content = self.get_info_from_isip()
-            if content == "1":
+            if content[0] == "1":
                 return ISIPCheckResult.ACCEPTED
-            elif content == "0":
+            elif content[0] == "0":
                 return ISIPCheckResult.DECLINED
         log.warning("Incorrect format of the file with opt-in status.")
         return ISIPCheckResult.DECLINED
