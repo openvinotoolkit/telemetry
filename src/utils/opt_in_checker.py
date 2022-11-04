@@ -34,7 +34,9 @@ class OptInChecker:
     opt_in_question = "Intel would like your permission to collect software performance and usage data for the " \
                       "purpose of improving Intel products and services. This data will be collected directly " \
                       "by Intel or through the use of Google Analytics. This data will be stored in countries " \
-                      "where Intel or Google operate.\nYou can opt-out at any time in the future by running {}.\n" \
+                      "where Intel or Google operate. Intel operates around the world and your usage data will " \
+                      "be sent to Intel in the United States or other countries.\nYou can opt-out at any time " \
+                      "in the future by running {}.\n" \
                       "More Information is available at {}.\n" \
                       "Please type ‘Y’ to give your consent or ‘N’ to decline.".format(opt_in_out_script_run_command,
                                                                                        doc_link)
