@@ -33,7 +33,17 @@ class Telemetry(metaclass=SingletonMetaClass):
     application name, version and tracking id just once. Later the instance can be created without parameters.
     """
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
-                 backend: [str, None] = 'ga'):
+                 backend: [str, None] = 'ga',
+                 non_interactive: bool = False):
+        """
+        :param app_name: The ID of the application that utilizes telemetry via this object.
+        :param app_version: The version of the application.
+        :param tid: The backend-specific tracking code, identifying the base for the telemetry collection.
+        :param backend: The telemetry collection backend to use.
+        :param non_interactive: If True, then no dialogs or interactions will be shown to the user and consent-requiring
+        telemetry will be not collected unless a consent was previously given on this machien; otherwise, the
+        user may be prompted for a consent for telemetry collection explicitly.
+        """
         # The case when instance is already configured
         if app_name is None:
             if not hasattr(self, 'sender') or self.sender is None:
@@ -61,8 +71,8 @@ class Telemetry(metaclass=SingletonMetaClass):
             if opt_in_checker.create_or_check_isip_dir():
                 answer = ISIPCheckResult.DECLINED
                 # create ISIP file if possible with "0" value
-                if not opt_in_checker.update_result(answer):
-                    pass
+                if not opt_in_checker.update_result(answer) or non_interactive:
+                    return
                 try:
                     # run opt-in dialog
                     answer = opt_in_checker.opt_in_dialog()
@@ -93,7 +103,7 @@ class Telemetry(metaclass=SingletonMetaClass):
                         # Here we send telemetry with "declined" dialog result
                         self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
                 except KeyboardInterrupt:
-                    pass
+                    return
 
     def force_shutdown(self, timeout: float = 1.0):
         """
