@@ -36,12 +36,12 @@ class Telemetry(metaclass=SingletonMetaClass):
                  backend: [str, None] = 'ga',
                  non_interactive: bool = False):
         """
-        :param app_name: The ID of the application that utilizes telemetry via this object.
+        :param app_name: The name of the application that utilizes telemetry via this object.
         :param app_version: The version of the application.
         :param tid: The backend-specific tracking code, identifying the base for the telemetry collection.
         :param backend: The telemetry collection backend to use.
         :param non_interactive: If True, then no dialogs or interactions will be shown to the user and consent-requiring
-        telemetry will be not collected unless a consent was previously given on this machien; otherwise, the
+        telemetry will not be collected unless a consent was previously given on this machine; otherwise, the
         user may be prompted for a consent for telemetry collection explicitly.
         """
         # The case when instance is already configured
