@@ -108,6 +108,9 @@ class Telemetry(metaclass=SingletonMetaClass):
             "pot",
             "omz_downloader",
             "omz_converter",
+            "omz_data_downloader",
+            "omz_info_dumper",
+            "omz_quantizer",
             "accuracy_check"
         ]
         extensions = [".py", ".exe", ""]
