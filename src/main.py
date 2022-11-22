@@ -3,6 +3,7 @@
 
 import logging as log
 import os
+import sys
 from enum import Enum
 
 from .backend.backend import BackendRegistry
@@ -60,9 +61,14 @@ class Telemetry(metaclass=SingletonMetaClass):
         if opt_in_check_result == ISIPCheckResult.NO_FILE:
             if opt_in_checker.create_or_check_isip_dir():
                 answer = ISIPCheckResult.DECLINED
+
+                # check if it is openvino tool
+                if not self.check_by_cmd_line_if_dialog_needed():
+                    return
+
                 # create ISIP file if possible with "0" value
                 if not opt_in_checker.update_result(answer):
-                    pass
+                    return
                 try:
                     # run opt-in dialog
                     answer = opt_in_checker.opt_in_dialog()
@@ -94,6 +100,31 @@ class Telemetry(metaclass=SingletonMetaClass):
                         self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
                 except KeyboardInterrupt:
                     pass
+
+    def check_by_cmd_line_if_dialog_needed(self):
+        scripts_to_run_dialog = [
+            os.path.join("openvino", "tools", "mo", "main"),
+            "mo",
+            "pot",
+            "omz_downloader",
+            "omz_converter",
+            "omz_data_downloader",
+            "omz_info_dumper",
+            "omz_quantizer",
+            "accuracy_check"
+        ]
+        extensions = [".py", ".exe", ""]
+        args = sys.argv
+        if len(args) == 0:
+            return False
+        script_name = args[0]
+
+        for script_to_run_dialog in scripts_to_run_dialog:
+            for ext in extensions:
+                script_to_check = script_to_run_dialog + ext
+                if script_name.endswith(script_to_check):
+                    return True
+        return False
 
     def force_shutdown(self, timeout: float = 1.0):
         """
