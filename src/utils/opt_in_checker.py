@@ -123,7 +123,7 @@ class OptInChecker:
         Returns the ISIP file path.
         :return: ISIP file path.
         """
-        return os.path.join(self.isip_file_base_dir(), self.isip_file_subdirectory(), "openvino_telemetry")
+        return os.path.join(self.isip_file_base_dir(), self.isip_file_subdirectory(), "isip")
 
     def create_new_isip_file(self):
         """
