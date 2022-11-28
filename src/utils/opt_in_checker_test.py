@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from platform import system
 from unittest.mock import MagicMock
 
-from .opt_in_checker import OptInChecker, ISIPCheckResult
+from .opt_in_checker import OptInChecker, ConsentCheckResult
 
 
 class OptInCheckerTest(unittest.TestCase):
@@ -19,8 +19,8 @@ class OptInCheckerTest(unittest.TestCase):
 
     def init_opt_in_checker(self):
         self.remove_test_subdir()
-        self.opt_in_checker.isip_file_base_dir = MagicMock(return_value=self.test_directory)
-        self.opt_in_checker.isip_file_subdirectory = MagicMock(return_value=self.test_subdir)
+        self.opt_in_checker.consent_file_base_dir = MagicMock(return_value=self.test_directory)
+        self.opt_in_checker.consent_file_subdirectory = MagicMock(return_value=self.test_subdir)
         self.opt_in_checker._check_input_is_terminal = MagicMock(return_value=True)
         self.opt_in_checker._check_main_process = MagicMock(return_value=True)
         if not os.path.exists(self.test_directory):
@@ -31,8 +31,8 @@ class OptInCheckerTest(unittest.TestCase):
 
     def remove_test_subdir(self):
         test_subdir = os.path.join(self.test_directory, self.test_subdir)
-        if os.path.exists(self.opt_in_checker.isip_file()):
-            os.remove(self.opt_in_checker.isip_file())
+        if os.path.exists(self.opt_in_checker.consent_file()):
+            os.remove(self.opt_in_checker.consent_file())
         if os.path.exists(test_subdir):
             os.chmod(test_subdir, 0o777)
             os.rmdir(test_subdir)
@@ -52,8 +52,8 @@ class OptInCheckerTest(unittest.TestCase):
             os.mkdir(test_subdir)
         os.chmod(test_subdir, 0o444)
 
-        self.assertTrue(self.opt_in_checker.check() == ISIPCheckResult.NO_FILE)
-        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
+        self.assertTrue(self.opt_in_checker.check() == ConsentCheckResult.NO_FILE)
+        self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is False)
         self.remove_test_subdir()
 
     def test_dir_no_writable(self):
@@ -65,8 +65,8 @@ class OptInCheckerTest(unittest.TestCase):
         self.init_opt_in_checker()
         os.chmod(self.test_directory, 0o444)
 
-        self.assertTrue(self.opt_in_checker.check() == ISIPCheckResult.NO_FILE)
-        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
+        self.assertTrue(self.opt_in_checker.check() == ConsentCheckResult.NO_FILE)
+        self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is False)
         os.chmod(self.test_directory, 0o777)
         self.remove_test_subdir()
 
@@ -78,40 +78,40 @@ class OptInCheckerTest(unittest.TestCase):
         open(test_subdir, 'w').close()
         os.chmod(test_subdir, 0o444)
 
-        self.assertTrue(self.opt_in_checker.check() == ISIPCheckResult.NO_FILE)
+        self.assertTrue(self.opt_in_checker.check() == ConsentCheckResult.NO_FILE)
 
         # Linux allows delete read-only files, while Windows doesn't
         if system() == 'Windows':
-            self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
+            self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is False)
             os.chmod(test_subdir, 0o777)
             os.remove(test_subdir)
         else:
-            self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is True)
+            self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is True)
 
         self.remove_test_subdir()
 
     def test_incorrect_control_file_format(self):
         self.init_opt_in_checker()
-        with open(self.opt_in_checker.isip_file(), 'w') as file:
+        with open(self.opt_in_checker.consent_file(), 'w') as file:
             file.write("{ abc")
         result = self.opt_in_checker.check()
-        self.assertTrue(result == ISIPCheckResult.DECLINED)
+        self.assertTrue(result == ConsentCheckResult.DECLINED)
         self.remove_test_subdir()
 
     def test_incorrect_result_value(self):
         self.init_opt_in_checker()
-        with open(self.opt_in_checker.isip_file(), 'w') as file:
+        with open(self.opt_in_checker.consent_file(), 'w') as file:
             content = {'opt_in': 312}
             json.dump(content, file)
         result = self.opt_in_checker.check()
-        self.assertTrue(result == ISIPCheckResult.DECLINED)
+        self.assertTrue(result == ConsentCheckResult.DECLINED)
         self.remove_test_subdir()
 
     def test_subdirectory_does_not_exist(self):
         self.init_opt_in_checker()
         test_subdir = os.path.join(self.test_directory, self.test_subdir)
         os.rmdir(test_subdir)
-        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is True)
+        self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is True)
         self.remove_test_subdir()
 
     def test_base_directory_does_not_exist(self):
@@ -119,14 +119,14 @@ class OptInCheckerTest(unittest.TestCase):
         test_subdir = os.path.join(self.test_directory, self.test_subdir)
         os.rmdir(test_subdir)
         os.rmdir(self.test_directory)
-        self.assertTrue(self.opt_in_checker.create_or_check_isip_dir() is False)
+        self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is False)
         self.remove_test_subdir()
 
     def test_send_telemetry_from_non_cmd_tool(self):
         self.init_opt_in_checker()
         self.opt_in_checker._check_input_is_terminal = MagicMock(return_value=False)
-        with open(self.opt_in_checker.isip_file(), 'w') as file:
+        with open(self.opt_in_checker.consent_file(), 'w') as file:
             file.write("1")
         result = self.opt_in_checker.check()
-        self.assertTrue(result == ISIPCheckResult.ACCEPTED)
+        self.assertTrue(result == ConsentCheckResult.ACCEPTED)
         self.remove_test_subdir()

@@ -13,7 +13,7 @@ from .colored_print import colored_print
 from .input_with_timeout import input_with_timeout
 
 
-class ISIPCheckResult(Enum):
+class ConsentCheckResult(Enum):
     DECLINED = 0
     ACCEPTED = 1
     NO_FILE = 2
@@ -82,10 +82,10 @@ class OptInChecker:
         return answer
 
     @staticmethod
-    def isip_file_base_dir():
+    def consent_file_base_dir():
         """
-        Returns the base directory of the ISIP file.
-        :return: base directory of the ISIP file.
+        Returns the base directory of the consent file.
+        :return: base directory of the consent file.
         """
         platform = system()
 
@@ -97,53 +97,53 @@ class OptInChecker:
             dir_to_check = Path.home()
 
         if dir_to_check is None:
-            raise Exception('Failed to find location of the ISIP file.')
+            raise Exception('Failed to find location of the openvino_telemetry file.')
 
-        isip_base_dir = os.path.expandvars(dir_to_check)
-        if not os.path.isdir(isip_base_dir):
-            raise Exception('Failed to find location of the ISIP file.')
+        consent_base_dir = os.path.expandvars(dir_to_check)
+        if not os.path.isdir(consent_base_dir):
+            raise Exception('Failed to find location of the openvino_telemetry file.')
 
-        return isip_base_dir
+        return consent_base_dir
 
     @staticmethod
-    def isip_file_subdirectory():
+    def consent_file_subdirectory():
         """
-        Returns ISIP file subdirectory.
-        :return: ISIP file subdirectory.
+        Returns consent file subdirectory.
+        :return: consent file subdirectory.
         """
         platform = system()
         if platform == 'Windows':
             return 'Intel Corporation'
         elif platform in ['Linux', 'Darwin']:
             return 'intel'
-        raise Exception('Failed to find location of the ISIP file.')
+        raise Exception('Failed to find location of the openvino_telemetry file.')
 
-    def isip_file(self):
+    def consent_file(self):
         """
-        Returns the ISIP file path.
-        :return: ISIP file path.
+        Returns the consent file path.
+        :return: consent file path.
         """
-        return os.path.join(self.isip_file_base_dir(), self.isip_file_subdirectory(), "isip")
+        return os.path.join(self.consent_file_base_dir(), self.consent_file_subdirectory(), "openvino_telemetry")
 
-    def create_new_isip_file(self):
+    def create_new_consent_file(self):
         """
-        Creates a new ISIP file.
+        Creates a new consent file.
         :return: True if the file is created successfully, otherwise False
         """
-        if not self.create_or_check_isip_dir():
+        if not self.create_or_check_consent_dir():
             return False
         try:
-            open(self.isip_file(), 'w').close()
+            open(self.consent_file(), 'w').close()
         except Exception:
             return False
         return True
 
-    def create_or_check_isip_dir(self):
+    def create_or_check_consent_dir(self):
         """
-        Creates ISIP file directory and checks if the directory is writable.
+        Creates consent file directory and checks if the directory is writable.
         :return: True if the directory is created and writable, otherwise False
         """
-        base_dir = self.isip_file_base_dir()
+        base_dir = self.consent_file_base_dir()
         base_is_dir = os.path.isdir(base_dir)
         base_dir_exists = os.path.exists(base_dir)
         base_w_access = os.access(base_dir, os.W_OK)
@@ -151,56 +151,56 @@ class OptInChecker:
         if not base_dir_exists or not base_is_dir:
             return False
         if not base_w_access:
-            log.warning("Failed to create ISIP file. "
+            log.warning("Failed to create openvino_telemetry file. "
                         "Please allow write access to the following directory: {}".format(base_dir))
             return False
 
-        isip_dir = os.path.join(self.isip_file_base_dir(), self.isip_file_subdirectory())
-        isip_is_dir = os.path.isdir(isip_dir)
-        isip_dir_exists = os.path.exists(isip_dir)
+        consect_file_dir = os.path.join(self.consent_file_base_dir(), self.consent_file_subdirectory())
+        consent_file_is_dir = os.path.isdir(consect_file_dir)
+        consent_file_dir_exists = os.path.exists(consect_file_dir)
 
-        # If ISIP path exists and it is not directory, we try to remove it
-        if isip_dir_exists and not isip_is_dir:
+        # If consent path exists and it is not directory, we try to remove it
+        if consent_file_dir_exists and not consent_file_is_dir:
             try:
-                os.remove(isip_dir)
+                os.remove(consect_file_dir)
             except:
-                log.warning("Unable to create directory for ISIP file, as {} is invalid directory.".format(isip_dir))
+                log.warning("Unable to create directory for openvino_telemetry file, as {} is invalid directory.".format(consect_file_dir))
                 return False
 
-        if not os.path.exists(isip_dir):
+        if not os.path.exists(consect_file_dir):
             try:
-                os.mkdir(isip_dir)
+                os.mkdir(consect_file_dir)
 
                 # check that directory is created
-                if not os.path.exists(isip_dir):
+                if not os.path.exists(consect_file_dir):
                     return False
             except Exception as e:
-                log.warning("Failed to create directory for ISIP file: {}".format(str(e)))
+                log.warning("Failed to create directory for openvino_telemetry file: {}".format(str(e)))
                 return False
 
-        isip_w_access = os.access(isip_dir, os.W_OK)
-        if not isip_w_access:
-            log.warning("Failed to create ISIP file. "
-                        "Please allow write access to the following directory: {}".format(isip_dir))
+        consent_file_w_access = os.access(consect_file_dir, os.W_OK)
+        if not consent_file_w_access:
+            log.warning("Failed to create openvino_telemetry file. "
+                        "Please allow write access to the following directory: {}".format(consect_file_dir))
             return False
         return True
 
-    def update_result(self, result: ISIPCheckResult):
+    def update_result(self, result: ConsentCheckResult):
         """
-        Updates the 'opt_in' value in the ISIP file.
+        Updates the 'opt_in' value in the consent file.
         :param result: opt-in dialog result.
-        :return: False if the ISIP file is not writable, otherwise True
+        :return: False if the consent file is not writable, otherwise True
         """
-        if not os.path.exists(self.isip_file()):
-            if not self.create_new_isip_file():
+        if not os.path.exists(self.consent_file()):
+            if not self.create_new_consent_file():
                 return False
-        if not os.access(self.isip_file(), os.W_OK):
+        if not os.access(self.consent_file(), os.W_OK):
             log.warning("Failed to update opt-in status. "
-                        "Please allow write access to the following file: {}".format(self.isip_file()))
+                        "Please allow write access to the following file: {}".format(self.consent_file()))
             return False
         try:
-            with open(self.isip_file(), 'w') as file:
-                if result == ISIPCheckResult.ACCEPTED:
+            with open(self.consent_file(), 'w') as file:
+                if result == ConsentCheckResult.ACCEPTED:
                     file.write("1")
                 else:
                     file.write("0")
@@ -208,25 +208,25 @@ class OptInChecker:
             return False
         return True
 
-    def isip_is_empty(self):
+    def consent_file_is_empty(self):
         """
-        Checks if the ISIP file is empty.
-        :return: True if ISIP file is empty, otherwise False.
+        Checks if the consent file is empty.
+        :return: True if consent file is empty, otherwise False.
         """
-        if os.stat(self.isip_file()).st_size == 0:
+        if os.stat(self.consent_file()).st_size == 0:
             return True
         return False
 
-    def get_info_from_isip(self):
+    def get_info_from_consent_file(self):
         """
-        Gets information from ISIP file.
+        Gets information from consent file.
         :return: the tuple, where the first element is True if the file is read successfully, otherwise False
-        and the second element is the content of the ISIP file.
+        and the second element is the content of the consent file.
         """
-        if not os.access(self.isip_file(), os.R_OK):
+        if not os.access(self.consent_file(), os.R_OK):
             return False, {}
         try:
-            with open(self.isip_file(), 'r') as file:
+            with open(self.consent_file(), 'r') as file:
                 content = file.readline().strip()
         except Exception:
             return False, {}
@@ -277,22 +277,22 @@ class OptInChecker:
 
     def check(self):
         """
-        Checks if user has accepted the collection of the information by checking the ISIP file.
+        Checks if user has accepted the collection of the information by checking the consent file.
         :return: opt-in dialog result
         """
-        if not os.path.exists(self.isip_file()):
+        if not os.path.exists(self.consent_file()):
             if not self._check_main_process():
-                return ISIPCheckResult.DECLINED
+                return ConsentCheckResult.DECLINED
 
             if not self._check_input_is_terminal() or self._check_run_in_notebook():
-                return ISIPCheckResult.DECLINED
-            return ISIPCheckResult.NO_FILE
+                return ConsentCheckResult.DECLINED
+            return ConsentCheckResult.NO_FILE
 
-        if not self.isip_is_empty():
-            _, content = self.get_info_from_isip()
+        if not self.consent_file_is_empty():
+            _, content = self.get_info_from_consent_file()
             if content == "1":
-                return ISIPCheckResult.ACCEPTED
+                return ConsentCheckResult.ACCEPTED
             elif content == "0":
-                return ISIPCheckResult.DECLINED
+                return ConsentCheckResult.DECLINED
         log.warning("Incorrect format of the file with opt-in status.")
-        return ISIPCheckResult.DECLINED
+        return ConsentCheckResult.DECLINED

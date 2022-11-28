@@ -53,7 +53,7 @@ def get_uid_path():
 
     :return: the directory with the the UUID file
     """
-    return os.path.join(OptInChecker.isip_file_base_dir(), OptInChecker.isip_file_subdirectory())
+    return os.path.join(OptInChecker.consent_file_base_dir(), OptInChecker.consent_file_subdirectory())
 
 
 def remove_uid_file(file_name: str):
