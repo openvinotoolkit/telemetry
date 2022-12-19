@@ -66,3 +66,15 @@ class TelemetrySenderStress(unittest.TestCase):
             self.assertTrue(time.time() - start_time > 4.0)
         except Exception as err:
             print('[ WARNING ] Error while accessing to ThreadPoolExecutor._work_queue.qsize(): {}'.format(err))
+
+    def test_check_send_after_shutdown(self):
+        """
+        Checks that sender does not break if event is sent after shutdown
+        """
+        tm = TelemetrySender()
+        fake_backend = FakeTelemetryBackendWithSleep()
+        tm.send(fake_backend, None)
+
+        # ask to shutdown with timeout of 1 second
+        tm.force_shutdown(1)
+        tm.send(fake_backend, None)

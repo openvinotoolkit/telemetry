@@ -33,8 +33,11 @@ class TelemetrySender:
         # to avoid dead lock we should not add callback inside the "with self._lock" block because it will be executed
         # immediately if the fut is available
         if free_space:
-            fut = self.executor.submit(backend.send, message)
-            fut.add_done_callback(_future_callback)
+            try:
+                fut = self.executor.submit(backend.send, message)
+                fut.add_done_callback(_future_callback)
+            except Exception as err:
+                log.warning("Failed to send event with error {}.".format(err))
 
     def force_shutdown(self, timeout: float):
         """
