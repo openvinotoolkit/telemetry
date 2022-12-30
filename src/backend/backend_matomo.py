@@ -14,9 +14,9 @@ class MatomoBackend(TelemetryBackend):
     id = 'matomo'
     uid_filename = 'openvino_ga_uid'
 
-    def __init__(self, tid: str = '1', app_name: str = None, app_version: str = None):
+    def __init__(self, tid: str = None, app_name: str = None, app_version: str = None):
         super(MatomoBackend, self).__init__(tid, app_name, app_version)
-        self.tid = tid
+        self.tid = tid if tid else "1"
         self.uid = None
         self.app_name = app_name
         self.app_version = app_version

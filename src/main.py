@@ -46,7 +46,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         opt_in_check_result = opt_in_checker.check()
         self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED
 
-        if tid is None:
+        if tid is None and backend == 'ga':
             log.warning("Telemetry will not be sent as TID is not specified.")
 
         self.tid = tid
