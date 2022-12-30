@@ -10,6 +10,7 @@ from ..utils.message import Message, MessageType
 
 
 class MatomoBackend(TelemetryBackend):
+    #TODO: Update to correct link when available
     backend_url = 'https://example111.matomo.cloud/matomo.php'
     id = 'matomo'
     uid_filename = 'openvino_ga_uid'
