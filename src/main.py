@@ -67,7 +67,7 @@ class Telemetry(metaclass=SingletonMetaClass):
                 if not self.check_by_cmd_line_if_dialog_needed():
                     return
 
-                # create ISIP file if possible with "0" value
+                # create consent file if possible with "0" value
                 answer = ConsentCheckResult.DECLINED
                 if not opt_in_checker.update_result(answer):
                     return
@@ -104,10 +104,14 @@ class Telemetry(metaclass=SingletonMetaClass):
                 except KeyboardInterrupt:
                     pass
             elif backend == 'matomo':
-                if not opt_in_checker.create_or_check_isip_dir():
+                if not opt_in_checker.create_or_check_consent_dir():
                     return
                 # For Matomo backend telemetry is sent by default and does not require opt-in dialog.
-                opt_in_checker.update_result(ISIPCheckResult.ACCEPTED)
+                opt_in_checker.update_result(ConsentCheckResult.ACCEPTED)
+                self.consent = True
+                self.backend.generate_new_uid_file()
+                print("Anonymous telemetry data will be sent during OpenVino tools usage. To turn off telemetry "
+                      "sending use following command: {}".format(opt_in_checker.opt_in_out_script_run_command))
 
     def check_by_cmd_line_if_dialog_needed(self):
         scripts_to_run_dialog = [
