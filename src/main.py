@@ -7,7 +7,7 @@ import sys
 from enum import Enum
 
 from .backend.backend import BackendRegistry
-from .utils.opt_in_checker import OptInChecker, ISIPCheckResult, DialogResult
+from .utils.opt_in_checker import OptInChecker, ConsentCheckResult, DialogResult
 from .utils.sender import TelemetrySender
 
 
@@ -44,7 +44,7 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         opt_in_checker = OptInChecker()
         opt_in_check_result = opt_in_checker.check()
-        self.consent = opt_in_check_result == ISIPCheckResult.ACCEPTED
+        self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED
 
         if tid is None:
             log.warning("Telemetry will not be sent as TID is not specified.")
@@ -56,10 +56,10 @@ class Telemetry(metaclass=SingletonMetaClass):
         if self.consent and not self.backend.uid_file_initialized():
             self.backend.generate_new_uid_file()
 
-        # ISIP file may be absent, for example, during the first run of Openvino tool.
-        if opt_in_check_result == ISIPCheckResult.NO_FILE:
+        # Consent file may be absent, for example, during the first run of Openvino tool.
+        if opt_in_check_result == ConsentCheckResult.NO_FILE:
             # Try to create empty directory for consent file
-            if not opt_in_checker.create_or_check_isip_dir():
+            if not opt_in_checker.create_or_check_consent_dir():
                 return
             if backend == 'ga':
 
@@ -68,7 +68,7 @@ class Telemetry(metaclass=SingletonMetaClass):
                     return
 
                 # create ISIP file if possible with "0" value
-                answer = ISIPCheckResult.DECLINED
+                answer = ConsentCheckResult.DECLINED
                 if not opt_in_checker.update_result(answer):
                     return
                 # For GA backend we trigger opt-in dialog that asks user permission for sending telemetry.
@@ -76,28 +76,28 @@ class Telemetry(metaclass=SingletonMetaClass):
                     # run opt-in dialog
                     answer = opt_in_checker.opt_in_dialog()
                     if answer == DialogResult.ACCEPTED:
-                        # If the dialog result is "accepted" we generate new GUID file and update ISIP
+                        # If the dialog result is "accepted" we generate new GUID file and update openvino_telemetry
                         # file with "1" value. Telemetry data will be collected in this case.
                         self.consent = True
                         self.backend.generate_new_uid_file()
                         self.send_opt_in_event(OptInStatus.ACCEPTED)
 
                         # Here we send telemetry with "accepted" dialog result
-                        opt_in_checker.update_result(ISIPCheckResult.ACCEPTED)
+                        opt_in_checker.update_result(ConsentCheckResult.ACCEPTED)
                     elif answer == DialogResult.TIMEOUT_REACHED:
                         # If timer was reached and we have no response from user, we should not send
                         # any data except for dialog result.
-                        # At this point we have already created ISIP file with "0" value,
+                        # At this point we have already created openvino_telemetry file with "0" value,
                         # which means that no telemetry data will be collected in further functions.
-                        # As ISIP file exists on the system the dialog won't be shown again.
+                        # As openvino_telemetry file exists on the system the dialog won't be shown again.
 
                         # Here we send telemetry with "timer reached" dialog result
                         self.send_opt_in_event(OptInStatus.UNDEFINED, force_send=True)
                     else:
                         # If the dialog result is "declined" we should not send any data except for dialog result.
-                        # At this point we have already created ISIP file with "0" value,
+                        # At this point we have already created openvino_telemetry file with "0" value,
                         # which means that no telemetry data will be collected in further functions.
-                        # As ISIP file exists on the system the dialog won't be shown again.
+                        # As openvino_telemetry file exists on the system the dialog won't be shown again.
 
                         # Here we send telemetry with "declined" dialog result
                         self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
@@ -205,15 +205,15 @@ class Telemetry(metaclass=SingletonMetaClass):
         opt_in_check = opt_in_checker.check()
 
         prev_status = OptInStatus.UNDEFINED
-        if opt_in_check == ISIPCheckResult.DECLINED:
+        if opt_in_check == ConsentCheckResult.DECLINED:
             prev_status = OptInStatus.DECLINED
-        elif opt_in_check == ISIPCheckResult.ACCEPTED:
+        elif opt_in_check == ConsentCheckResult.ACCEPTED:
             prev_status = OptInStatus.ACCEPTED
 
         if new_opt_in_status:
-            updated = opt_in_checker.update_result(ISIPCheckResult.ACCEPTED)
+            updated = opt_in_checker.update_result(ConsentCheckResult.ACCEPTED)
         else:
-            updated = opt_in_checker.update_result(ISIPCheckResult.DECLINED)
+            updated = opt_in_checker.update_result(ConsentCheckResult.DECLINED)
         if not updated:
             return
 
@@ -274,4 +274,4 @@ class Telemetry(metaclass=SingletonMetaClass):
         """
         Returns version of telemetry library.
         """
-        return '2022.1.2'
+        return '2022.3.0'

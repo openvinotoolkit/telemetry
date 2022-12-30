@@ -17,8 +17,8 @@ class InputWithTimeoutTest(unittest.TestCase):
 
     def init_backend(self):
         self.backend = BackendRegistry.get_backend('ga')("test_backend", "NONE")
-        OptInChecker.isip_file_base_dir = MagicMock(return_value=self.test_directory)
-        OptInChecker.isip_file_subdirectory = MagicMock(return_value=self.test_subdir)
+        OptInChecker.consent_file_base_dir = MagicMock(return_value=self.test_directory)
+        OptInChecker.consent_file_subdirectory = MagicMock(return_value=self.test_subdir)
         self.uid_path = os.path.join(self.test_directory, self.test_subdir, self.backend.uid_filename)
 
         self.clean_test_dir()
