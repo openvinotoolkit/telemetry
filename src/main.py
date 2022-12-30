@@ -57,18 +57,21 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.backend.generate_new_uid_file()
 
         # ISIP file may be absent, for example, during the first run of Openvino tool.
-        # In this case we trigger opt-in dialog that asks user permission for sending telemetry.
         if opt_in_check_result == ISIPCheckResult.NO_FILE:
-            if opt_in_checker.create_or_check_isip_dir():
-                answer = ISIPCheckResult.DECLINED
+            # Try to create empty directory for consent file
+            if not opt_in_checker.create_or_check_isip_dir():
+                return
+            if backend == 'ga':
 
                 # check if it is openvino tool
                 if not self.check_by_cmd_line_if_dialog_needed():
                     return
 
                 # create ISIP file if possible with "0" value
+                answer = ISIPCheckResult.DECLINED
                 if not opt_in_checker.update_result(answer):
                     return
+                # For GA backend we trigger opt-in dialog that asks user permission for sending telemetry.
                 try:
                     # run opt-in dialog
                     answer = opt_in_checker.opt_in_dialog()
@@ -100,6 +103,11 @@ class Telemetry(metaclass=SingletonMetaClass):
                         self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
                 except KeyboardInterrupt:
                     pass
+            elif backend == 'matomo':
+                if not opt_in_checker.create_or_check_isip_dir():
+                    return
+                # For Matomo backend telemetry is sent by default and does not require opt-in dialog.
+                opt_in_checker.update_result(ISIPCheckResult.ACCEPTED)
 
     def check_by_cmd_line_if_dialog_needed(self):
         scripts_to_run_dialog = [

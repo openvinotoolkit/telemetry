@@ -14,18 +14,17 @@ class MatomoBackend(TelemetryBackend):
     id = 'matomo'
     uid_filename = 'openvino_ga_uid'
 
-    def __init__(self, tid: str = None, app_name: str = None, app_version: str = None):
+    def __init__(self, tid: str = '1', app_name: str = None, app_version: str = None):
         super(MatomoBackend, self).__init__(tid, app_name, app_version)
         self.tid = tid
         self.uid = None
         self.app_name = app_name
         self.app_version = app_version
         self.default_message_attrs = {
-            'idsite': '1',
+            'idsite': self.tid,
             'rec': '1',
-            # 'tid': self.tid,
-            'dimension0': self.app_name,
-            'dimension1': self.app_version,
+            'dimension1': self.app_name,
+            'dimension2': self.app_version,
         }
 
     def send(self, message: Message):
@@ -41,8 +40,6 @@ class MatomoBackend(TelemetryBackend):
                             **kwargs):
         data = self.default_message_attrs.copy()
         data.update({
-            #'t': 'event',
-            #'ca': 1,
             'e_c': event_category,
             'e_a': event_action,
             'e_n': event_label,
@@ -53,8 +50,6 @@ class MatomoBackend(TelemetryBackend):
     def build_session_start_message(self, category: str, **kwargs):
         data = self.default_message_attrs.copy()
         data.update({
-            # 'sc': 'start',
-            # 't': 'event',
             'new_visit': 1,
             'e_c': category,
             'e_a': 'session',
@@ -66,8 +61,6 @@ class MatomoBackend(TelemetryBackend):
     def build_session_end_message(self, category: str, **kwargs):
         data = self.default_message_attrs.copy()
         data.update({
-            # 'sc': 'end',
-            # 't': 'event',
             'e_c': category,
             'e_a': 'session',
             'e_n': 'end',
@@ -78,7 +71,6 @@ class MatomoBackend(TelemetryBackend):
     def build_error_message(self, category: str, error_msg: str, **kwargs):
         data = self.default_message_attrs.copy()
         data.update({
-            #'t': 'event',
             'e_c': category,
             'e_a': 'error',
             'e_n': error_msg,
@@ -89,7 +81,6 @@ class MatomoBackend(TelemetryBackend):
     def build_stack_trace_message(self, category: str, error_msg: str, **kwargs):
         data = self.default_message_attrs.copy()
         data.update({
-            #'t': 'event',
             'e_c': category,
             'e_a': 'stack_trace',
             'e_n': error_msg,
