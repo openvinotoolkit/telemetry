@@ -10,19 +10,18 @@ from ..utils.message import Message, MessageType
 
 
 class MatomoBackend(TelemetryBackend):
-    #TODO: Update to correct link when available
-    backend_url = 'https://example111.matomo.cloud/matomo.php'
+    backend_url = None
     id = 'matomo'
     uid_filename = 'openvino_ga_uid'
 
     def __init__(self, tid: str = None, app_name: str = None, app_version: str = None):
         super(MatomoBackend, self).__init__(tid, app_name, app_version)
-        self.tid = tid if tid else "1"
+        self.backend_url = tid + "/matomo.php"
         self.uid = None
         self.app_name = app_name
         self.app_version = app_version
         self.default_message_attrs = {
-            'idsite': self.tid,
+            'idsite': '1',
             'rec': '1',
             'dimension1': self.app_name,
             'dimension2': self.app_version,
@@ -33,7 +32,7 @@ class MatomoBackend(TelemetryBackend):
             message.attrs['uid'] = str(uuid.uuid4())
         try:
             import requests
-            requests.post(self.backend_url, message.attrs, timeout=1.0)
+            requests.post(self.backend_url, message.attrs, timeout=1.0, proxies={"http": self.backend_url})
         except Exception as err:
             log.warning("Failed to send event with the following error: {}".format(err))
 

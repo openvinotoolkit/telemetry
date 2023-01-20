@@ -34,7 +34,7 @@ class Telemetry(metaclass=SingletonMetaClass):
     application name, version and tracking id just once. Later the instance can be created without parameters.
     """
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
-                 backend: [str, None] = 'matomo'):
+                 backend: [str, None] = 'ga'):
         # The case when instance is already configured
         if app_name is None:
             if not hasattr(self, 'sender') or self.sender is None:

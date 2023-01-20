@@ -20,6 +20,7 @@ def main():
         print('Specify either "--opt_in" or "--opt_out" command line parameter.')
         exit(1)
 
+# TODO: Update to Matomo base id after switching to Matomo by default
     tid = "UA-17808594-29"
     if args.opt_in:
         tm.Telemetry.opt_in(tid=tid)
