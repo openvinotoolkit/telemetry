@@ -10,7 +10,7 @@ from .backend import BackendRegistry
 from ..utils.opt_in_checker import OptInChecker
 
 
-class InputWithTimeoutTest(unittest.TestCase):
+class MatomoInputWithTimeoutTest(unittest.TestCase):
     test_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_matomo_backend')
     test_subdir = 'test_matomo_backend_subdir'
 
