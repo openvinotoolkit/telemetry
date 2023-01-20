@@ -104,12 +104,12 @@ class Telemetry(metaclass=SingletonMetaClass):
                 except KeyboardInterrupt:
                     pass
             elif backend == 'matomo':
-                if not opt_in_checker.create_or_check_consent_dir():
-                    return
                 # For Matomo backend telemetry is sent by default and does not require opt-in dialog.
-                opt_in_checker.update_result(ConsentCheckResult.ACCEPTED)
+                if not opt_in_checker.update_result(ConsentCheckResult.ACCEPTED):
+                    return
                 self.consent = True
                 self.backend.generate_new_uid_file()
+                # TODO: Update this message when final wording is confirmed
                 print("Anonymous telemetry data will be sent during OpenVino tools usage. To turn off telemetry "
                       "sending use following command: {}".format(opt_in_checker.opt_in_out_script_run_command))
 
