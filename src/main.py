@@ -34,7 +34,7 @@ class Telemetry(metaclass=SingletonMetaClass):
     application name, version and tracking id just once. Later the instance can be created without parameters.
     """
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
-                 backend: [str, None] = 'ga'):
+                 backend: [str, None] = 'ga4'):
         # The case when instance is already configured
         if app_name is None:
             if not hasattr(self, 'sender') or self.sender is None:
@@ -161,7 +161,9 @@ class Telemetry(metaclass=SingletonMetaClass):
         :return: None
         """
         if self.consent:
-            self.sender.send(self.backend, self.backend.build_session_start_message(category, **kwargs))
+            data = self.backend.build_session_start_message(category, **kwargs)
+            if data is not None:
+                self.sender.send(self.backend, data)
 
     def end_session(self, category: str, **kwargs):
         """
@@ -172,7 +174,9 @@ class Telemetry(metaclass=SingletonMetaClass):
         :return: None
         """
         if self.consent:
-            self.sender.send(self.backend, self.backend.build_session_end_message(category, **kwargs))
+            data = self.backend.build_session_end_message(category, **kwargs)
+            if data is not None:
+                self.sender.send(self.backend, data)
 
     def send_error(self, category: str, error_msg: str, **kwargs):
         if self.consent:
