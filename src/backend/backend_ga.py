@@ -3,6 +3,7 @@
 
 import logging as log
 import uuid
+from urllib import request, parse
 
 from .backend import TelemetryBackend
 from ..utils.guid import get_or_generate_uid, remove_uid_file
@@ -32,8 +33,9 @@ class GABackend(TelemetryBackend):
         if self.uid is None:
             message.attrs['cid'] = str(uuid.uuid4())
         try:
-            import requests
-            requests.post(self.backend_url, message.attrs, timeout=1.0)
+            data = parse.urlencode(message.attrs).encode()
+            req = request.Request(self.backend_url, data=data)
+            request.urlopen(req)
         except Exception as err:
             log.warning("Failed to send event with the following error: {}".format(err))
 
