@@ -270,4 +270,4 @@ class Telemetry(metaclass=SingletonMetaClass):
         """
         Returns version of telemetry library.
         """
-        return '2022.3.0'
+        return '2023.0.0'
