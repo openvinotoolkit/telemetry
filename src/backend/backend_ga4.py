@@ -6,6 +6,7 @@ import uuid
 
 from .backend import TelemetryBackend
 from ..utils.guid import get_or_generate_uid, remove_uid_file
+from urllib import request
 import json
 
 
@@ -32,8 +33,9 @@ class GA4Backend(TelemetryBackend):
         if message is None:
             return
         try:
-            import requests
-            requests.post(self.backend_url, data=json.dumps(message),verify=True, timeout=1.0)
+            data = json.dumps(message).encode()
+            req = request.Request(self.backend_url, data=data)
+            request.urlopen(req)
         except Exception as err:
             log.warning("Failed to send event with the following error: {}".format(err))
 
