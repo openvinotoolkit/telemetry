@@ -67,16 +67,16 @@ class GA4Backend(TelemetryBackend):
 
     def build_session_start_message(self, category: str, **kwargs):
         self.generate_new_session_id()
-        return None
+        return self.build_event_message(category, "session", "start", 1)
 
     def build_session_end_message(self, category: str, **kwargs):
-        return None
+        return self.build_event_message(category, "session", "end", 1)
 
     def build_error_message(self, category: str, error_msg: str, **kwargs):
-        return None
+        return self.build_event_message(category, "error", error_msg, 1)
 
     def build_stack_trace_message(self, category: str, error_msg: str, **kwargs):
-        return None
+        return self.build_event_message(category, "stack_trace", error_msg, 1)
 
     def remove_client_id_file(self):
         self.uid = None
