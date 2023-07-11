@@ -1,29 +1,29 @@
 # Copyright (C) 2018-2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import logging as log
 import uuid
+from urllib import request
 
 from .backend import TelemetryBackend
 from ..utils.guid import get_or_generate_uid, remove_uid_file
-from urllib import request
-import json
 
 
 class GA4Backend(TelemetryBackend):
     api_secret = "P3wk33kgTY6ijVm66zWf3g"
-    measurement_id = "G-3FVYJZJGXR" #rm
     id = 'ga4'
     uid_filename = 'openvino_ga_uid'
 
     def __init__(self, tid: str = None, app_name: str = None, app_version: str = None):
         super(GA4Backend, self).__init__(tid, app_name, app_version)
-        #self.measurement_id = tid
+        self.measurement_id = tid
         self.app_name = app_name
         self.app_version = app_version
         self.session_id = None
         self.uid = None
-        self.backend_url = "https://www.google-analytics.com/mp/collect?measurement_id={}&api_secret={}".format(self.measurement_id, self.api_secret)
+        self.backend_url = "https://www.google-analytics.com/mp/collect?measurement_id={}&api_secret={}".format(
+            self.measurement_id, self.api_secret)
         self.default_message_attrs = {
             'app_name': self.app_name,
             'app_version': self.app_version,
@@ -48,20 +48,20 @@ class GA4Backend(TelemetryBackend):
             self.generate_new_session_id()
 
         payload = {
-          "client_id": client_id,
-          "non_personalized_ads": False,
-          "events": [
-            {
-              "name": event_action,
-              "params": {
-                "event_category": event_category,
-                "event_label": event_label,
-                "event_count": event_value,
-                "session_id": self.session_id,
-                **self.default_message_attrs,
-              }
-            }
-          ]
+            "client_id": client_id,
+            "non_personalized_ads": False,
+            "events": [
+                {
+                    "name": event_action,
+                    "params": {
+                        "event_category": event_category,
+                        "event_label": event_label,
+                        "event_count": event_value,
+                        "session_id": self.session_id,
+                        **self.default_message_attrs,
+                    }
+                }
+            ]
         }
         return payload
 
@@ -73,7 +73,7 @@ class GA4Backend(TelemetryBackend):
         return self.build_event_message(category, "session", "end", 1)
 
     def build_error_message(self, category: str, error_msg: str, **kwargs):
-        return self.build_event_message(category, "error", error_msg, 1)
+        return self.build_event_message(category, "error_", error_msg, 1)
 
     def build_stack_trace_message(self, category: str, error_msg: str, **kwargs):
         return self.build_event_message(category, "stack_trace", error_msg, 1)
