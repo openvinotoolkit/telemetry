@@ -11,7 +11,7 @@ from ..utils.guid import get_or_generate_uid, remove_uid_file
 
 
 class GA4Backend(TelemetryBackend):
-    api_secret = "P3wk33kgTY6ijVm66zWf3g"
+    api_secret = "zbEMioDXSE-MUHHPLRIi0A"
     id = 'ga4'
     uid_filename = 'openvino_ga_uid'
 
