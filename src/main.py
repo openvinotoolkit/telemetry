@@ -209,7 +209,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         if not updated:
             return
 
-        telemetry = Telemetry(tid=tid, app_name=app_name, app_version=app_version)
+        telemetry = Telemetry(tid=tid, app_name=app_name, app_version=app_version, backend='ga4')
 
         # In order to prevent sending of duplicate events, after multiple run of opt_in_out --opt_in/--opt_out
         # we send opt_in event only if consent value is changed
