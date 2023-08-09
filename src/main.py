@@ -104,6 +104,7 @@ class Telemetry(metaclass=SingletonMetaClass):
     def check_by_cmd_line_if_dialog_needed(self):
         scripts_to_run_dialog = [
             os.path.join("openvino", "tools", "mo", "main"),
+            os.path.join("openvino", "tools", "ovc", "main"),
             "ovc",
             "mo",
             "pot",
