@@ -104,6 +104,7 @@ class Telemetry(metaclass=SingletonMetaClass):
     def check_by_cmd_line_if_dialog_needed(self):
         scripts_to_run_dialog = [
             os.path.join("openvino", "tools", "mo", "main"),
+            "ovc",
             "mo",
             "pot",
             "omz_downloader",
@@ -122,7 +123,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         for script_to_run_dialog in scripts_to_run_dialog:
             for ext in extensions:
                 script_to_check = script_to_run_dialog + ext
-                if script_name.endswith(script_to_check):
+                if script_name == script_to_check or script_name.endswith(os.sep + script_to_check):
                     return True
         return False
 
