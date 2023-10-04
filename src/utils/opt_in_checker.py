@@ -275,17 +275,18 @@ class OptInChecker:
             pass
         return False
 
-    def check(self):
+    def check(self, enable_opt_in_dialog):
         """
         Checks if user has accepted the collection of the information by checking the consent file.
         :return: opt-in dialog result
         """
         if not os.path.exists(self.consent_file()):
-            if not self._check_main_process():
-                return ConsentCheckResult.DECLINED
+            if enable_opt_in_dialog:
+                if not self._check_main_process():
+                    return ConsentCheckResult.DECLINED
 
-            if not self._check_input_is_terminal() or self._check_run_in_notebook():
-                return ConsentCheckResult.DECLINED
+                if not self._check_input_is_terminal() or self._check_run_in_notebook():
+                    return ConsentCheckResult.DECLINED
             return ConsentCheckResult.NO_FILE
 
         if not self.consent_file_is_empty():

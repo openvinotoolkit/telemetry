@@ -1,11 +1,9 @@
 # Copyright (C) 2018-2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import datetime
 import json
 import os
 import unittest
-from datetime import datetime, timedelta
 from platform import system
 from unittest.mock import MagicMock
 
@@ -52,7 +50,7 @@ class OptInCheckerTest(unittest.TestCase):
             os.mkdir(test_subdir)
         os.chmod(test_subdir, 0o444)
 
-        self.assertTrue(self.opt_in_checker.check() == ConsentCheckResult.NO_FILE)
+        self.assertTrue(self.opt_in_checker.check(enable_opt_in_dialog=False) == ConsentCheckResult.NO_FILE)
         self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is False)
         self.remove_test_subdir()
 
@@ -65,7 +63,7 @@ class OptInCheckerTest(unittest.TestCase):
         self.init_opt_in_checker()
         os.chmod(self.test_directory, 0o444)
 
-        self.assertTrue(self.opt_in_checker.check() == ConsentCheckResult.NO_FILE)
+        self.assertTrue(self.opt_in_checker.check(enable_opt_in_dialog=False) == ConsentCheckResult.NO_FILE)
         self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is False)
         os.chmod(self.test_directory, 0o777)
         self.remove_test_subdir()
@@ -78,7 +76,7 @@ class OptInCheckerTest(unittest.TestCase):
         open(test_subdir, 'w').close()
         os.chmod(test_subdir, 0o444)
 
-        self.assertTrue(self.opt_in_checker.check() == ConsentCheckResult.NO_FILE)
+        self.assertTrue(self.opt_in_checker.check(enable_opt_in_dialog=False) == ConsentCheckResult.NO_FILE)
 
         # Linux allows delete read-only files, while Windows doesn't
         if system() == 'Windows':
@@ -94,7 +92,7 @@ class OptInCheckerTest(unittest.TestCase):
         self.init_opt_in_checker()
         with open(self.opt_in_checker.consent_file(), 'w') as file:
             file.write("{ abc")
-        result = self.opt_in_checker.check()
+        result = self.opt_in_checker.check(enable_opt_in_dialog=False)
         self.assertTrue(result == ConsentCheckResult.DECLINED)
         self.remove_test_subdir()
 
@@ -103,7 +101,7 @@ class OptInCheckerTest(unittest.TestCase):
         with open(self.opt_in_checker.consent_file(), 'w') as file:
             content = {'opt_in': 312}
             json.dump(content, file)
-        result = self.opt_in_checker.check()
+        result = self.opt_in_checker.check(enable_opt_in_dialog=False)
         self.assertTrue(result == ConsentCheckResult.DECLINED)
         self.remove_test_subdir()
 
@@ -127,6 +125,6 @@ class OptInCheckerTest(unittest.TestCase):
         self.opt_in_checker._check_input_is_terminal = MagicMock(return_value=False)
         with open(self.opt_in_checker.consent_file(), 'w') as file:
             file.write("1")
-        result = self.opt_in_checker.check()
+        result = self.opt_in_checker.check(enable_opt_in_dialog=False)
         self.assertTrue(result == ConsentCheckResult.ACCEPTED)
         self.remove_test_subdir()

@@ -34,7 +34,7 @@ class Telemetry(metaclass=SingletonMetaClass):
     application name, version and tracking id just once. Later the instance can be created without parameters.
     """
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
-                 backend: [str, None] = 'ga'):
+                 backend: [str, None] = 'ga', enable_opt_in_dialog=True):
         # The case when instance is already configured
         if app_name is None:
             if not hasattr(self, 'sender') or self.sender is None:
@@ -42,19 +42,43 @@ class Telemetry(metaclass=SingletonMetaClass):
                                    'application name, version and TID.')
             return
 
+        self.init(app_name, app_version, tid, backend, enable_opt_in_dialog)
+
+    def init(self, app_name: str = None, app_version: str = None, tid: str = None,
+                 backend: [str, None] = 'ga', enable_opt_in_dialog=True):
         opt_in_checker = OptInChecker()
-        opt_in_check_result = opt_in_checker.check()
-        self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED
+        opt_in_check_result = opt_in_checker.check(enable_opt_in_dialog)
+        if enable_opt_in_dialog:
+            self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED
+        else:
+            self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED or \
+                           opt_in_check_result == ConsentCheckResult.NO_FILE
 
         if tid is None:
             log.warning("Telemetry will not be sent as TID is not specified.")
 
         self.tid = tid
-        self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
+
+        try:
+            self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
+        except RuntimeError:
+            log.warning("Could not initialize Telemetry backend. No data will be sent.")
+
         self.sender = TelemetrySender()
 
         if self.consent and not self.backend.cid_file_initialized():
             self.backend.generate_new_cid_file()
+
+        if not enable_opt_in_dialog:
+            # Try to create directory for client ID if it not exists
+            if not opt_in_checker.create_or_check_consent_dir():
+                log.warning("Could not create directory for storing client ID. No data will be sent.")
+                return
+
+            # Generate client ID if it does not exist
+            if not self.backend.cid_file_initialized():
+                self.backend.generate_new_cid_file()
+            return
 
         # Consent file may be absent, for example, during the first run of Openvino tool.
         # In this case we trigger opt-in dialog that asks user permission for sending telemetry.
@@ -196,7 +220,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         app_name = 'opt_in_out'
         app_version = Telemetry.get_version()
         opt_in_checker = OptInChecker()
-        opt_in_check = opt_in_checker.check()
+        opt_in_check = opt_in_checker.check(enable_opt_in_dialog=False)
 
         prev_status = OptInStatus.UNDEFINED
         if opt_in_check == ConsentCheckResult.DECLINED:
