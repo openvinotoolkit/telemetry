@@ -6,19 +6,19 @@ import uuid
 from urllib import request, parse
 
 from .backend import TelemetryBackend
-from ..utils.guid import get_or_generate_uid, remove_uid_file
+from ..utils.cid import get_or_generate_cid, remove_cid_file
 from ..utils.message import Message, MessageType
 
 
 class GABackend(TelemetryBackend):
     backend_url = 'https://www.google-analytics.com/collect'
     id = 'ga'
-    uid_filename = 'openvino_ga_uid'
+    cid_filename = 'openvino_ga_cid'
 
     def __init__(self, tid: str = None, app_name: str = None, app_version: str = None):
         super(GABackend, self).__init__(tid, app_name, app_version)
         self.tid = tid
-        self.uid = None
+        self.cid = None
         self.app_name = app_name
         self.app_version = app_version
         self.default_message_attrs = {
@@ -30,7 +30,7 @@ class GABackend(TelemetryBackend):
         }
 
     def send(self, message: Message):
-        if self.uid is None:
+        if self.cid is None:
             message.attrs['cid'] = str(uuid.uuid4())
         try:
             data = parse.urlencode(message.attrs).encode()
@@ -97,22 +97,22 @@ class GABackend(TelemetryBackend):
         })
         return Message(MessageType.STACK_TRACE, data)
 
-    def remove_uid_file(self):
-        self.uid = None
+    def remove_cid_file(self):
+        self.cid = None
         self.default_message_attrs['cid'] = None
-        remove_uid_file(self.uid_filename)
+        remove_cid_file(self.cid_filename)
 
-    def generate_new_uid_file(self):
-        self.uid = get_or_generate_uid(self.uid_filename, lambda: str(uuid.uuid4()), is_valid_uuid4)
-        self.default_message_attrs['cid'] = self.uid
+    def generate_new_cid_file(self):
+        self.cid = get_or_generate_cid(self.cid_filename, lambda: str(uuid.uuid4()), is_valid_cid)
+        self.default_message_attrs['cid'] = self.cid
 
-    def uid_file_initialized(self):
-        return self.uid is not None
+    def cid_file_initialized(self):
+        return self.cid is not None
 
 
-def is_valid_uuid4(uid: str):
+def is_valid_cid(cid: str):
     try:
-        uuid.UUID(uid, version=4)
+        uuid.UUID(cid, version=4)
     except ValueError:
         return False
     return True

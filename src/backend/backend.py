@@ -82,21 +82,21 @@ class TelemetryBackend(metaclass=TelemetryBackendMetaClass):
         """
 
     @abc.abstractmethod
-    def remove_uid_file(self):
+    def remove_cid_file(self):
         """
-        Should remove UID file.
-        """
-
-    @abc.abstractmethod
-    def generate_new_uid_file(self):
-        """
-        Should generate new UID file.
+        Should remove client ID file.
         """
 
     @abc.abstractmethod
-    def uid_file_initialized(self):
+    def generate_new_cid_file(self):
         """
-        Should check if UID file is initialized.
+        Should generate new Client ID file.
+        """
 
-        :return: True if UID file is initialized, otherwise False.
+    @abc.abstractmethod
+    def cid_file_initialized(self):
+        """
+        Should check if client ID file is initialized.
+
+        :return: True if client ID file is initialized, otherwise False.
         """

@@ -53,8 +53,8 @@ class Telemetry(metaclass=SingletonMetaClass):
         self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
         self.sender = TelemetrySender()
 
-        if self.consent and not self.backend.uid_file_initialized():
-            self.backend.generate_new_uid_file()
+        if self.consent and not self.backend.cid_file_initialized():
+            self.backend.generate_new_cid_file()
 
         # Consent file may be absent, for example, during the first run of Openvino tool.
         # In this case we trigger opt-in dialog that asks user permission for sending telemetry.
@@ -73,10 +73,10 @@ class Telemetry(metaclass=SingletonMetaClass):
                     # run opt-in dialog
                     answer = opt_in_checker.opt_in_dialog()
                     if answer == DialogResult.ACCEPTED:
-                        # If the dialog result is "accepted" we generate new GUID file and update openvino_telemetry
+                        # If the dialog result is "accepted" we generate new client ID file and update openvino_telemetry
                         # file with "1" value. Telemetry data will be collected in this case.
                         self.consent = True
-                        self.backend.generate_new_uid_file()
+                        self.backend.generate_new_cid_file()
                         self.send_opt_in_event(OptInStatus.ACCEPTED)
 
                         # Here we send telemetry with "accepted" dialog result
@@ -216,14 +216,14 @@ class Telemetry(metaclass=SingletonMetaClass):
         # In order to prevent sending of duplicate events, after multiple run of opt_in_out --opt_in/--opt_out
         # we send opt_in event only if consent value is changed
         if new_opt_in_status:
-            telemetry.backend.generate_new_uid_file()
+            telemetry.backend.generate_new_cid_file()
             if prev_status != OptInStatus.ACCEPTED:
                 telemetry.send_opt_in_event(OptInStatus.ACCEPTED, prev_status)
             print("You have successfully opted in to send the telemetry data.")
         else:
             if prev_status != OptInStatus.DECLINED:
                 telemetry.send_opt_in_event(OptInStatus.DECLINED, prev_status, force_send=True)
-            telemetry.backend.remove_uid_file()
+            telemetry.backend.remove_cid_file()
             print("You have successfully opted out to send the telemetry data.")
 
     def send_opt_in_event(self, new_state: OptInStatus, prev_state: OptInStatus = OptInStatus.UNDEFINED,

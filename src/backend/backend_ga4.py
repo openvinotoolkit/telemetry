@@ -7,13 +7,14 @@ import uuid
 from urllib import request
 
 from .backend import TelemetryBackend
-from ..utils.guid import get_or_generate_uid, remove_uid_file
+from ..utils.cid import get_or_generate_cid, remove_cid_file
 
 
 class GA4Backend(TelemetryBackend):
     api_secret = "zbEMioDXSE-MUHHPLRIi0A"
     id = 'ga4'
-    uid_filename = 'openvino_ga_uid'
+    cid_filename = 'openvino_ga_cid'
+    old_cid_filename = 'openvino_ga_uid'
 
     def __init__(self, tid: str = None, app_name: str = None, app_version: str = None):
         super(GA4Backend, self).__init__(tid, app_name, app_version)
@@ -21,7 +22,7 @@ class GA4Backend(TelemetryBackend):
         self.app_name = app_name
         self.app_version = app_version
         self.session_id = None
-        self.uid = None
+        self.cid = None
         self.backend_url = "https://www.google-analytics.com/mp/collect?measurement_id={}&api_secret={}".format(
             self.measurement_id, self.api_secret)
         self.default_message_attrs = {
@@ -41,7 +42,7 @@ class GA4Backend(TelemetryBackend):
 
     def build_event_message(self, event_category: str, event_action: str, event_label: str, event_value: int = 1,
                             **kwargs):
-        client_id = self.uid
+        client_id = self.cid
         if client_id is None:
             client_id = "0"
         if self.session_id is None:
@@ -79,26 +80,26 @@ class GA4Backend(TelemetryBackend):
         return self.build_event_message(category, "stack_trace", error_msg, 1)
 
     def remove_client_id_file(self):
-        self.uid = None
-        remove_uid_file(self.uid_filename)
+        self.cid = None
+        remove_cid_file(self.cid_filename)
 
-    def generate_new_uid_file(self):
-        self.uid = get_or_generate_uid(self.uid_filename, lambda: str(uuid.uuid4()), is_valid_uuid4)
+    def generate_new_cid_file(self):
+        self.cid = get_or_generate_cid(self.cid_filename, lambda: str(uuid.uuid4()), is_valid_cid, self.old_cid_filename)
 
-    def uid_file_initialized(self):
-        return self.uid is not None
+    def cid_file_initialized(self):
+        return self.cid is not None
 
     def generate_new_session_id(self):
         self.session_id = str(uuid.uuid4())
 
-    def remove_uid_file(self):
-        self.uid = None
-        remove_uid_file(self.uid_filename)
+    def remove_cid_file(self):
+        self.cid = None
+        remove_cid_file(self.cid_filename)
 
 
-def is_valid_uuid4(uid: str):
+def is_valid_cid(cid: str):
     try:
-        uuid.UUID(uid, version=4)
+        uuid.UUID(cid, version=4)
     except ValueError:
         return False
     return True
