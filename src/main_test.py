@@ -57,6 +57,7 @@ class GeneralTelemetryTest(unittest.TestCase):
         OptInChecker.consent_file_base_dir = MagicMock(return_value=test_dir)
         self.cid_path = os.path.join(test_subdir, self.backend.cid_filename)
         OptInChecker.consent_file_subdirectory = MagicMock(return_value=os.path.basename(test_subdir))
+        _ = Telemetry("a", "b", "c")
 
     def make_message(self, client_id, app_name, app_version, category, action, label, value, session_id):
         return {'client_id': client_id,
