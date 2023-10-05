@@ -32,9 +32,19 @@ class Telemetry(metaclass=SingletonMetaClass):
     """
     The main class to send telemetry data. It uses singleton pattern. The instance should be initialized with the
     application name, version and tracking id just once. Later the instance can be created without parameters.
+    Args:
+        :param app_name: The name of the application.
+        :param app_version: The version of the application.
+        :param tid: The ID of telemetry base.
+        :param backend: Telemetry backend name.
+        :param enable_opt_in_dialog: boolean flag to turn on or turn off opt-in dialog.
+        If enable_opt_in_dialog=True opt-in dialog is shown during first usage of openvino tools,
+        no telemetry is sent until user accepts telemetry with dialog.
+        If enable_opt_in_dialog=False, telemetry is sent without opt-in dialog, unless user explicitly turned it off
+        with opt_in_out script.
     """
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
-                 backend: [str, None] = 'ga'):
+                 backend: [str, None] = 'ga', enable_opt_in_dialog=True):
         # The case when instance is already configured
         if app_name is None:
             if not hasattr(self, 'sender') or self.sender is None:
@@ -42,9 +52,17 @@ class Telemetry(metaclass=SingletonMetaClass):
                                    'application name, version and TID.')
             return
 
+        self.init(app_name, app_version, tid, backend, enable_opt_in_dialog)
+
+    def init(self, app_name: str = None, app_version: str = None, tid: str = None,
+                 backend: [str, None] = 'ga', enable_opt_in_dialog=True):
         opt_in_checker = OptInChecker()
-        opt_in_check_result = opt_in_checker.check()
-        self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED
+        opt_in_check_result = opt_in_checker.check(enable_opt_in_dialog)
+        if enable_opt_in_dialog:
+            self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED
+        else:
+            self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED or \
+                           opt_in_check_result == ConsentCheckResult.NO_FILE
 
         if tid is None:
             log.warning("Telemetry will not be sent as TID is not specified.")
@@ -55,6 +73,17 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         if self.consent and not self.backend.cid_file_initialized():
             self.backend.generate_new_cid_file()
+
+        if not enable_opt_in_dialog and self.consent:
+            # Try to create directory for client ID if it does not exist
+            if not opt_in_checker.create_or_check_consent_dir():
+                log.warning("Could not create directory for storing client ID. No data will be sent.")
+                return
+
+            # Generate client ID if it does not exist
+            if not self.backend.cid_file_initialized():
+                self.backend.generate_new_cid_file()
+            return
 
         # Consent file may be absent, for example, during the first run of Openvino tool.
         # In this case we trigger opt-in dialog that asks user permission for sending telemetry.
@@ -196,7 +225,12 @@ class Telemetry(metaclass=SingletonMetaClass):
         app_name = 'opt_in_out'
         app_version = Telemetry.get_version()
         opt_in_checker = OptInChecker()
-        opt_in_check = opt_in_checker.check()
+        # If enable_opt_in_dialog=True is set opt_in_checker.check() makes extra checks,
+        # if it is the main process or a notebook opt_in_checker.check() returns ConsentCheckResult.DECLINED.
+        # It is needed only in init() method to prevent opt-in dialog for these cases.
+        # Here these checks are not needed, because _update_opt_in_status() is executed only from opt_in_out
+        # which does not trigger opt-in dialog in any case.
+        opt_in_check = opt_in_checker.check(enable_opt_in_dialog=False)
 
         prev_status = OptInStatus.UNDEFINED
         if opt_in_check == ConsentCheckResult.DECLINED:
