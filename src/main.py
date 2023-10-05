@@ -65,7 +65,7 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.backend.generate_new_cid_file()
 
         if not enable_opt_in_dialog and self.consent:
-            # Try to create directory for client ID if it not exists
+            # Try to create directory for client ID if it does not exist
             if not opt_in_checker.create_or_check_consent_dir():
                 log.warning("Could not create directory for storing client ID. No data will be sent.")
                 return
