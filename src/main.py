@@ -58,18 +58,13 @@ class Telemetry(metaclass=SingletonMetaClass):
             log.warning("Telemetry will not be sent as TID is not specified.")
 
         self.tid = tid
-
-        try:
-            self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
-        except RuntimeError:
-            log.warning("Could not initialize Telemetry backend. No data will be sent.")
-
+        self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
         self.sender = TelemetrySender()
 
         if self.consent and not self.backend.cid_file_initialized():
             self.backend.generate_new_cid_file()
 
-        if not enable_opt_in_dialog:
+        if not enable_opt_in_dialog and self.consent:
             # Try to create directory for client ID if it not exists
             if not opt_in_checker.create_or_check_consent_dir():
                 log.warning("Could not create directory for storing client ID. No data will be sent.")
