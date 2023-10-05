@@ -8,10 +8,10 @@ from urllib import request
 
 from .backend import TelemetryBackend
 from ..utils.cid import get_or_generate_cid, remove_cid_file
+from ..utils.params import telemetry_params
 
 
 class GA4Backend(TelemetryBackend):
-    api_secret = "zbEMioDXSE-MUHHPLRIi0A"
     id = 'ga4'
     cid_filename = 'openvino_ga_cid'
     old_cid_filename = 'openvino_ga_uid'
@@ -24,7 +24,7 @@ class GA4Backend(TelemetryBackend):
         self.session_id = None
         self.cid = None
         self.backend_url = "https://www.google-analytics.com/mp/collect?measurement_id={}&api_secret={}".format(
-            self.measurement_id, self.api_secret)
+            self.measurement_id, telemetry_params["api_key"])
         self.default_message_attrs = {
             'app_name': self.app_name,
             'app_version': self.app_version,
@@ -35,8 +35,13 @@ class GA4Backend(TelemetryBackend):
             return
         try:
             data = json.dumps(message).encode()
-            req = request.Request(self.backend_url, data=data)
-            request.urlopen(req)
+
+            if self.backend_url.lower().startswith('http'):
+                req = request.Request(self.backend_url, data=data)
+            else:
+                raise ValueError("Incorrect backend URL.")
+
+            request.urlopen(req) #nosec
         except Exception as err:
             log.warning("Failed to send event with the following error: {}".format(err))
 

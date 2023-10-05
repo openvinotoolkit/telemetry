@@ -6,6 +6,7 @@ import os
 import unittest
 from platform import system
 from unittest.mock import MagicMock
+import stat
 
 from .opt_in_checker import OptInChecker, ConsentCheckResult
 
@@ -32,10 +33,12 @@ class OptInCheckerTest(unittest.TestCase):
         if os.path.exists(self.opt_in_checker.consent_file()):
             os.remove(self.opt_in_checker.consent_file())
         if os.path.exists(test_subdir):
-            os.chmod(test_subdir, 0o777)
+            st = os.stat(test_subdir)
+            os.chmod(test_subdir, st.st_mode | stat.S_IWUSR)
             os.rmdir(test_subdir)
         if os.path.exists(self.test_directory):
-            os.chmod(self.test_directory, 0o777)
+            st = os.stat(self.test_directory)
+            os.chmod(self.test_directory, st.st_mode | stat.S_IWUSR)
             os.rmdir(os.path.join(self.test_directory))
 
     def test_subdir_no_writable(self):
@@ -65,7 +68,9 @@ class OptInCheckerTest(unittest.TestCase):
 
         self.assertTrue(self.opt_in_checker.check(enable_opt_in_dialog=False) == ConsentCheckResult.NO_FILE)
         self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is False)
-        os.chmod(self.test_directory, 0o777)
+
+        st = os.stat(self.test_directory)
+        os.chmod(self.test_directory, st.st_mode | stat.S_IWUSR)
         self.remove_test_subdir()
 
     def test_subdir_is_file(self):
@@ -81,7 +86,8 @@ class OptInCheckerTest(unittest.TestCase):
         # Linux allows delete read-only files, while Windows doesn't
         if system() == 'Windows':
             self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is False)
-            os.chmod(test_subdir, 0o777)
+            st = os.stat(test_subdir)
+            os.chmod(test_subdir, st.st_mode | stat.S_IWUSR)
             os.remove(test_subdir)
         else:
             self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is True)
