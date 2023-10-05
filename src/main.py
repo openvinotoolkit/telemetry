@@ -32,6 +32,16 @@ class Telemetry(metaclass=SingletonMetaClass):
     """
     The main class to send telemetry data. It uses singleton pattern. The instance should be initialized with the
     application name, version and tracking id just once. Later the instance can be created without parameters.
+    Args:
+        :param app_name: The name of the application.
+        :param app_version: The version of the application.
+        :param tid: The ID of telemetry base.
+        :param backend: Telemetry backend name.
+        :param enable_opt_in_dialog: boolean flag to turn on or turn off opt-in dialog.
+        If enable_opt_in_dialog=True opt-in dialog is shown during first usage of openvino tools,
+        no telemetry is sent until user accepts telemetry with dialog.
+        If enable_opt_in_dialog=False, telemetry is sent without opt-in dialog, unless user explicitly turned it off
+        with opt_in_out script.
     """
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
                  backend: [str, None] = 'ga', enable_opt_in_dialog=True):
@@ -215,6 +225,11 @@ class Telemetry(metaclass=SingletonMetaClass):
         app_name = 'opt_in_out'
         app_version = Telemetry.get_version()
         opt_in_checker = OptInChecker()
+        # If enable_opt_in_dialog=True is set opt_in_checker.check() makes extra checks,
+        # if it is the main process or a notebook opt_in_checker.check() returns ConsentCheckResult.DECLINED.
+        # It is needed only in init() method to prevent opt-in dialog for these cases.
+        # Here these checks are not needed, because _update_opt_in_status() is executed only from opt_in_out
+        # which does not trigger opt-in dialog in any case.
         opt_in_check = opt_in_checker.check(enable_opt_in_dialog=False)
 
         prev_status = OptInStatus.UNDEFINED
