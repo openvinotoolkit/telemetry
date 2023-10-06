@@ -41,7 +41,7 @@ class GA4Backend(TelemetryBackend):
             else:
                 raise ValueError("Incorrect backend URL.")
 
-            request.urlopen(req)
+            request.urlopen(req) #nosec
         except Exception as err:
             log.warning("Failed to send event with the following error: {}".format(err))
 
