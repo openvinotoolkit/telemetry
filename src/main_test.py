@@ -44,7 +44,8 @@ class TelemetryTest(unittest.TestCase):
 
             @patch('sys.argv', [app_name])
             def check():
-                assert Telemetry("a", "b", "c").check_by_cmd_line_if_dialog_needed() is expected_result
+                if not Telemetry("a", "b", "c").check_by_cmd_line_if_dialog_needed() is expected_result:
+                    raise Exception("Expected result is not equal to dialog result.")
 
             check()
 

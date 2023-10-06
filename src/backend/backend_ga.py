@@ -34,8 +34,13 @@ class GABackend(TelemetryBackend):
             message.attrs['cid'] = str(uuid.uuid4())
         try:
             data = parse.urlencode(message.attrs).encode()
-            req = request.Request(self.backend_url, data=data)
-            request.urlopen(req)
+
+            if self.backend_url.lower().startswith('http'):
+                req = request.Request(self.backend_url, data=data)
+            else:
+                raise ValueError("Incorrect backend URL.")
+
+            request.urlopen(req) #nosec
         except Exception as err:
             log.warning("Failed to send event with the following error: {}".format(err))
 
