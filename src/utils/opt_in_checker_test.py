@@ -54,6 +54,7 @@ class OptInCheckerTest(unittest.TestCase):
             self.assertTrue(self.opt_in_checker.check(enable_opt_in_dialog=False) == ConsentCheckResult.NO_FILE)
             self.assertTrue(self.opt_in_checker.check(enable_opt_in_dialog=True) == ConsentCheckResult.NO_FILE)
             self.assertTrue(self.opt_in_checker.create_or_check_consent_dir() is False)
+            os.chmod(test_dir, 0o777)
 
     def test_subdir_is_file(self):
 
