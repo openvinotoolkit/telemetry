@@ -40,7 +40,7 @@ class GABackend(TelemetryBackend):
             else:
                 raise ValueError("Incorrect backend URL.")
 
-            request.urlopen(req) #nosec
+            request.urlopen(req)
         except Exception as err:
             log.warning("Failed to send event with the following error: {}".format(err))
 
