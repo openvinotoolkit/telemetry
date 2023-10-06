@@ -84,10 +84,6 @@ class GA4Backend(TelemetryBackend):
     def build_stack_trace_message(self, category: str, error_msg: str, **kwargs):
         return self.build_event_message(category, "stack_trace", error_msg, 1)
 
-    def remove_client_id_file(self):
-        self.cid = None
-        remove_cid_file(self.cid_filename)
-
     def generate_new_cid_file(self):
         self.cid = get_or_generate_cid(self.cid_filename, lambda: str(uuid.uuid4()), is_valid_cid, self.old_cid_filename)
 
@@ -100,6 +96,7 @@ class GA4Backend(TelemetryBackend):
     def remove_cid_file(self):
         self.cid = None
         remove_cid_file(self.cid_filename)
+        remove_cid_file(self.old_cid_filename)
 
 
 def is_valid_cid(cid: str):
