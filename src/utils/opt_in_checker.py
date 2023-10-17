@@ -288,13 +288,13 @@ class OptInChecker:
                 return True
         return False
 
-    def check(self, enable_opt_in_dialog):
+    def check(self, enable_opt_in_dialog, disable_in_ci):
         """
         Checks if user has accepted the collection of the information by checking the consent file.
         For CI jobs always returns ConsentCheckResult.DECLINED
         :return: consent check result
         """
-        if self._run_in_ci():
+        if disable_in_ci and self._run_in_ci():
             return ConsentCheckResult.DECLINED
 
         if not os.path.exists(self.consent_file()):
