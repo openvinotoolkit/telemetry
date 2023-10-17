@@ -279,7 +279,7 @@ class OptInChecker:
     def _run_in_ci():
         """
         Checks that script is executed in CI job.
-        :return: True script is executed in CI job, otherwise False
+        :return: True if script is executed in CI job, otherwise False
         """
         ci_env_vars = ["CI", "TF_BUILD"]
 
