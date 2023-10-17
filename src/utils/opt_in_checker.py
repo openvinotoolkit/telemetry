@@ -281,11 +281,15 @@ class OptInChecker:
         Checks that script is executed in CI job.
         :return: True if script is executed in CI job, otherwise False
         """
-        ci_env_vars = ["CI", "TF_BUILD", "JENKINS_URL"]
+        if "CI" in os.environ and os.environ["CI"].lower() == "true":
+            return True
 
-        for env_name in ci_env_vars:
-            if env_name in os.environ:
-                return True
+        if "TF_BUILD" in os.environ and len(os.environ["TF_BUILD"]):
+            return True
+
+        if "JENKINS_URL" in os.environ and len(os.environ["JENKINS_URL"]):
+            return True
+
         return False
 
     def check(self, enable_opt_in_dialog, disable_in_ci=False):
