@@ -56,6 +56,7 @@ class GeneralTelemetryTest(unittest.TestCase):
     def init_backend(self, test_dir, test_subdir):
         self.backend = BackendRegistry.get_backend('ga4')("test_backend", "NONE")
         OptInChecker.consent_file_base_dir = MagicMock(return_value=test_dir)
+        OptInChecker._run_in_ci = MagicMock(return_value=False)
         self.cid_path = os.path.join(test_subdir, self.backend.cid_filename)
         OptInChecker.consent_file_subdirectory = MagicMock(return_value=os.path.basename(test_subdir))
         _ = Telemetry("a", "b", "c")
