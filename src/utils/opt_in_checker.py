@@ -281,7 +281,7 @@ class OptInChecker:
         Checks that script is executed in CI job.
         :return: True if script is executed in CI job, otherwise False
         """
-        ci_env_vars = ["CI", "TF_BUILD"]
+        ci_env_vars = ["CI", "TF_BUILD", "JENKINS_URL"]
 
         for env_name in ci_env_vars:
             if env_name in os.environ:
@@ -291,7 +291,6 @@ class OptInChecker:
     def check(self, enable_opt_in_dialog, disable_in_ci=False):
         """
         Checks if user has accepted the collection of the information by checking the consent file.
-        For CI jobs always returns ConsentCheckResult.DECLINED
         :return: consent check result
         """
         if disable_in_ci and self._run_in_ci():
