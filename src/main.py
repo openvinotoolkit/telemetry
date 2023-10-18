@@ -42,6 +42,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         no telemetry is sent until user accepts telemetry with dialog.
         If enable_opt_in_dialog=False, telemetry is sent without opt-in dialog, unless user explicitly turned it off
         with opt_in_out script.
+        :param disable_in_ci: Turn off telemetry for CI jobs.
     """
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
                  backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False):
