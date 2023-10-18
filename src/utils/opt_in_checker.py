@@ -275,11 +275,31 @@ class OptInChecker:
             pass
         return False
 
-    def check(self, enable_opt_in_dialog):
+    @staticmethod
+    def _run_in_ci():
+        """
+        Checks that script is executed in CI job.
+        :return: True if script is executed in CI job, otherwise False
+        """
+        if "CI" in os.environ and os.environ["CI"].lower() == "true":
+            return True
+
+        if "TF_BUILD" in os.environ and len(os.environ["TF_BUILD"]):
+            return True
+
+        if "JENKINS_URL" in os.environ and len(os.environ["JENKINS_URL"]):
+            return True
+
+        return False
+
+    def check(self, enable_opt_in_dialog, disable_in_ci=False):
         """
         Checks if user has accepted the collection of the information by checking the consent file.
-        :return: opt-in dialog result
+        :return: consent check result
         """
+        if disable_in_ci and self._run_in_ci():
+            return ConsentCheckResult.DECLINED
+
         if not os.path.exists(self.consent_file()):
             if enable_opt_in_dialog:
                 if not self._check_main_process():

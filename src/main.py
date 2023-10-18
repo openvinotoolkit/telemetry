@@ -42,9 +42,10 @@ class Telemetry(metaclass=SingletonMetaClass):
         no telemetry is sent until user accepts telemetry with dialog.
         If enable_opt_in_dialog=False, telemetry is sent without opt-in dialog, unless user explicitly turned it off
         with opt_in_out script.
+        :param disable_in_ci: Turn off telemetry for CI jobs.
     """
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
-                 backend: [str, None] = 'ga', enable_opt_in_dialog=True):
+                 backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False):
         # The case when instance is already configured
         if app_name is None:
             if not hasattr(self, 'sender') or self.sender is None:
@@ -52,12 +53,12 @@ class Telemetry(metaclass=SingletonMetaClass):
                                    'application name, version and TID.')
             return
 
-        self.init(app_name, app_version, tid, backend, enable_opt_in_dialog)
+        self.init(app_name, app_version, tid, backend, enable_opt_in_dialog, disable_in_ci)
 
     def init(self, app_name: str = None, app_version: str = None, tid: str = None,
-                 backend: [str, None] = 'ga', enable_opt_in_dialog=True):
+                 backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False):
         opt_in_checker = OptInChecker()
-        opt_in_check_result = opt_in_checker.check(enable_opt_in_dialog)
+        opt_in_check_result = opt_in_checker.check(enable_opt_in_dialog, disable_in_ci)
         if enable_opt_in_dialog:
             self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED
         else:
