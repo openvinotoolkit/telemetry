@@ -16,10 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install requirements
-        run: |
-          python3 setup.py sdist bdist_wheel
-
       - name: Build wheel
         run: |
           python3 setup.py sdist bdist_wheel
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheel
+          path: ${{ github.workspace }}/**/*.whl
