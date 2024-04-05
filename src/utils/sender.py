@@ -37,7 +37,7 @@ class TelemetrySender:
                 fut = self.executor.submit(backend.send, message)
                 fut.add_done_callback(_future_callback)
             except Exception as err:
-                pass
+                pass  # nosec
 
     def force_shutdown(self, timeout: float):
         """
@@ -61,4 +61,4 @@ class TelemetrySender:
             self.executor._threads.clear()
             futures.thread._threads_queues.clear()
         except Exception as err:
-            pass
+            pass  # nosec

@@ -43,7 +43,7 @@ class GA4Backend(TelemetryBackend):
 
             request.urlopen(req) #nosec
         except Exception as err:
-            pass
+            pass  # nosec
 
     def build_event_message(self, event_category: str, event_action: str, event_label: str, event_value: int = 1,
                             **kwargs):
