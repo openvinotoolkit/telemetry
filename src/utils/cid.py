@@ -18,7 +18,6 @@ def save_cid_to_file(file_name: str, cid: str):
         with open(file_name, 'w') as file:
             file.write(cid)
     except Exception as e:
-        log.warning("Failed to generate the client ID file: {}".format(str(e)))
         return False
     return True
 
