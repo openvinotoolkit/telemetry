@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-import logging as log
 import uuid
+from copy import copy
 from urllib import request
 
 from .backend import TelemetryBackend
@@ -41,17 +41,24 @@ class GA4Backend(TelemetryBackend):
             else:
                 raise ValueError("Incorrect backend URL.")
 
-            request.urlopen(req) #nosec
+            request.urlopen(req)  # nosec
         except Exception as err:
             pass  # nosec
 
     def build_event_message(self, event_category: str, event_action: str, event_label: str, event_value: int = 1,
+                            app_name=None, app_version=None,
                             **kwargs):
         client_id = self.cid
         if client_id is None:
             client_id = "0"
         if self.session_id is None:
             self.generate_new_session_id()
+
+        default_args = copy(self.default_message_attrs)
+        if app_name is not None:
+            default_args['app_name'] = app_name
+        if app_version is not None:
+            default_args['app_version'] = app_version
 
         payload = {
             "client_id": client_id,
@@ -64,7 +71,7 @@ class GA4Backend(TelemetryBackend):
                         "event_label": event_label,
                         "event_count": event_value,
                         "session_id": self.session_id,
-                        **self.default_message_attrs,
+                        **default_args,
                     }
                 }
             ]
@@ -85,7 +92,8 @@ class GA4Backend(TelemetryBackend):
         return self.build_event_message(category, "stack_trace", error_msg, 1)
 
     def generate_new_cid_file(self):
-        self.cid = get_or_generate_cid(self.cid_filename, lambda: str(uuid.uuid4()), is_valid_cid, self.old_cid_filename)
+        self.cid = get_or_generate_cid(self.cid_filename, lambda: str(uuid.uuid4()), is_valid_cid,
+                                       self.old_cid_filename)
 
     def cid_file_initialized(self):
         return self.cid is not None

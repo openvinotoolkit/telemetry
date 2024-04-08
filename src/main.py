@@ -44,6 +44,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         with opt_in_out script.
         :param disable_in_ci: Turn off telemetry for CI jobs.
     """
+
     def __init__(self, app_name: str = None, app_version: str = None, tid: str = None,
                  backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False):
         # The case when instance is already configured
@@ -56,7 +57,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         self.init(app_name, app_version, tid, backend, enable_opt_in_dialog, disable_in_ci)
 
     def init(self, app_name: str = None, app_version: str = None, tid: str = None,
-                 backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False):
+             backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False):
         opt_in_checker = OptInChecker()
         opt_in_check_result = opt_in_checker.check(enable_opt_in_dialog, disable_in_ci)
         if enable_opt_in_dialog:
@@ -168,7 +169,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         self.sender.force_shutdown(timeout)
 
     def send_event(self, event_category: str, event_action: str, event_label: str, event_value: int = 1,
-                   force_send=False, **kwargs):
+                   app_name=None, app_version=None, force_send=False, **kwargs):
         """
         Send single event.
 
@@ -176,13 +177,16 @@ class Telemetry(metaclass=SingletonMetaClass):
         :param event_action: action of the event
         :param event_label: the label associated with the action
         :param event_value: the integer value corresponding to this label
+        :param app_name: application name
+        :param app_version: application version
         :param force_send: forces to send event ignoring the consent value
         :param kwargs: additional parameters
         :return: None
         """
         if self.consent or force_send:
             self.sender.send(self.backend, self.backend.build_event_message(event_category, event_action, event_label,
-                                                                            event_value, **kwargs))
+                                                                            event_value, app_name, app_version,
+                                                                            **kwargs))
 
     def start_session(self, category: str, **kwargs):
         """
