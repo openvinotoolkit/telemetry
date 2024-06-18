@@ -20,6 +20,8 @@ on:
   schedule:
     - cron: '31 21 * * 6'
 
+permissions: read-all
+
 jobs:
   bandit:
     permissions:

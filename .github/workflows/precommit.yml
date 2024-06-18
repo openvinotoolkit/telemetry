@@ -1,6 +1,8 @@
 name: Precommit
 on: [push, pull_request]
 
+permissions: read-all
+
 jobs:
   Run_UT:
     runs-on: ubuntu-20.04
