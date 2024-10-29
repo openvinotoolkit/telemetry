@@ -97,11 +97,13 @@ class OptInChecker:
             dir_to_check = Path.home()
 
         if dir_to_check is None:
-            raise Exception('Failed to find location of the openvino_telemetry file.')
+            log.info('Failed to find location of the openvino_telemetry file.')
+            return None
 
         consent_base_dir = os.path.expandvars(dir_to_check)
         if not os.path.isdir(consent_base_dir):
-            raise Exception('Failed to find location of the openvino_telemetry file.')
+            log.info('Failed to find location of the openvino_telemetry file.')
+            return None
 
         return consent_base_dir
 
@@ -116,7 +118,8 @@ class OptInChecker:
             return 'Intel Corporation'
         elif platform in ['Linux', 'Darwin']:
             return 'intel'
-        raise Exception('Failed to find location of the openvino_telemetry file.')
+        log.info('Failed to find location of the openvino_telemetry file.')
+        return None
 
     def consent_file(self):
         """
@@ -144,6 +147,9 @@ class OptInChecker:
         :return: True if the directory is created and writable, otherwise False
         """
         base_dir = self.consent_file_base_dir()
+        consent_file_subdirectory = self.consent_file_subdirectory()
+        if base_dir is None or consent_file_subdirectory is None:
+            return False
         base_is_dir = os.path.isdir(base_dir)
         base_dir_exists = os.path.exists(base_dir)
         base_w_access = os.access(base_dir, os.W_OK)
@@ -155,33 +161,33 @@ class OptInChecker:
                         "Please allow write access to the following directory: {}".format(base_dir))
             return False
 
-        consect_file_dir = os.path.join(self.consent_file_base_dir(), self.consent_file_subdirectory())
-        consent_file_is_dir = os.path.isdir(consect_file_dir)
-        consent_file_dir_exists = os.path.exists(consect_file_dir)
+        consent_file_dir = os.path.join(base_dir, consent_file_subdirectory)
+        consent_file_is_dir = os.path.isdir(consent_file_dir)
+        consent_file_dir_exists = os.path.exists(consent_file_dir)
 
         # If consent path exists and it is not directory, we try to remove it
         if consent_file_dir_exists and not consent_file_is_dir:
             try:
-                os.remove(consect_file_dir)
+                os.remove(consent_file_dir)
             except:
-                log.warning("Unable to create directory for openvino_telemetry file, as {} is invalid directory.".format(consect_file_dir))
+                log.warning("Unable to create directory for openvino_telemetry file, as {} is invalid directory.".format(consent_file_dir))
                 return False
 
-        if not os.path.exists(consect_file_dir):
+        if not os.path.exists(consent_file_dir):
             try:
-                os.mkdir(consect_file_dir)
+                os.mkdir(consent_file_dir)
 
                 # check that directory is created
-                if not os.path.exists(consect_file_dir):
+                if not os.path.exists(consent_file_dir):
                     return False
             except Exception as e:
                 log.warning("Failed to create directory for openvino_telemetry file: {}".format(str(e)))
                 return False
 
-        consent_file_w_access = os.access(consect_file_dir, os.W_OK)
+        consent_file_w_access = os.access(consent_file_dir, os.W_OK)
         if not consent_file_w_access:
             log.warning("Failed to create openvino_telemetry file. "
-                        "Please allow write access to the following directory: {}".format(consect_file_dir))
+                        "Please allow write access to the following directory: {}".format(consent_file_dir))
             return False
         return True
 
@@ -191,6 +197,8 @@ class OptInChecker:
         :param result: opt-in dialog result.
         :return: False if the consent file is not writable, otherwise True
         """
+        if self.consent_file_base_dir() is None or self.consent_file_subdirectory() is None:
+            return False
         if not os.path.exists(self.consent_file()):
             if not self.create_new_consent_file():
                 return False
@@ -297,6 +305,9 @@ class OptInChecker:
         Checks if user has accepted the collection of the information by checking the consent file.
         :return: consent check result
         """
+        if self.consent_file_base_dir() is None or self.consent_file_subdirectory() is None:
+            return ConsentCheckResult.DECLINED
+
         if disable_in_ci and self._run_in_ci():
             return ConsentCheckResult.DECLINED
 
