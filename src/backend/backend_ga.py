@@ -38,7 +38,7 @@ class GABackend(TelemetryBackend):
             if self.backend_url.lower().startswith('http'):
                 req = request.Request(self.backend_url, data=data)
             else:
-                log.warning("Incorrect backend URL.")
+                log.info("Incorrect backend URL.")
                 return
 
             request.urlopen(req) #nosec

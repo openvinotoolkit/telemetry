@@ -97,12 +97,12 @@ class OptInChecker:
             dir_to_check = Path.home()
 
         if dir_to_check is None:
-            log.warning('Failed to find location of the openvino_telemetry file.')
+            log.info('Failed to find location of the openvino_telemetry file.')
             return None
 
         consent_base_dir = os.path.expandvars(dir_to_check)
         if not os.path.isdir(consent_base_dir):
-            log.warning('Failed to find location of the openvino_telemetry file.')
+            log.info('Failed to find location of the openvino_telemetry file.')
             return None
 
         return consent_base_dir
@@ -118,7 +118,7 @@ class OptInChecker:
             return 'Intel Corporation'
         elif platform in ['Linux', 'Darwin']:
             return 'intel'
-        log.warning('Failed to find location of the openvino_telemetry file.')
+        log.info('Failed to find location of the openvino_telemetry file.')
         return None
 
     def consent_file(self):
