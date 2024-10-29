@@ -148,7 +148,7 @@ class OptInChecker:
         """
         base_dir = self.consent_file_base_dir()
         consent_file_subdirectory = self.consent_file_subdirectory()
-        if self.consent_file_base_dir() is None or consent_file_subdirectory is None:
+        if base_dir is None or consent_file_subdirectory is None:
             return False
         base_is_dir = os.path.isdir(base_dir)
         base_dir_exists = os.path.exists(base_dir)
@@ -161,7 +161,7 @@ class OptInChecker:
                         "Please allow write access to the following directory: {}".format(base_dir))
             return False
 
-        consent_file_dir = os.path.join(self.consent_file_base_dir(), consent_file_subdirectory)
+        consent_file_dir = os.path.join(base_dir, consent_file_subdirectory)
         consent_file_is_dir = os.path.isdir(consent_file_dir)
         consent_file_dir_exists = os.path.exists(consent_file_dir)
 
