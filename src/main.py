@@ -248,6 +248,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         else:
             updated = opt_in_checker.update_result(ConsentCheckResult.DECLINED)
         if not updated:
+            print("Could not update the consent file. No telemetry will be sent.")
             return
 
         telemetry = Telemetry(tid=tid, app_name=app_name, app_version=app_version, backend='ga4')

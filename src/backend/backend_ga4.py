@@ -3,6 +3,8 @@
 
 import json
 import uuid
+import logging as log
+
 from copy import copy
 from urllib import request
 
@@ -39,7 +41,8 @@ class GA4Backend(TelemetryBackend):
             if self.backend_url.lower().startswith('http'):
                 req = request.Request(self.backend_url, data=data)
             else:
-                raise ValueError("Incorrect backend URL.")
+                log.warning("Incorrect backend URL.")
+                return
 
             request.urlopen(req)  # nosec
         except Exception as err:
