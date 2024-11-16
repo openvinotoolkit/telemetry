@@ -3,6 +3,8 @@
 
 import json
 import uuid
+import logging as log
+
 from copy import copy
 from urllib import request
 
@@ -46,11 +48,8 @@ class GA4Backend(TelemetryBackend):
             if self.backend_url.lower().startswith('http'):
                 req = request.Request(self.backend_url, data=data)
             else:
-<<<<<<< Updated upstream
                 log.info("Incorrect backend URL.")
                 return
-=======
-                raise ValueError("Incorrect backend URL.")
             process = multiprocessing.Process(target=_send_func, args=(req,))
             process.daemon = True
             process.start()
@@ -58,7 +57,6 @@ class GA4Backend(TelemetryBackend):
             process.join(self.timeout)
             if process.is_alive():
                 process.terminate()
->>>>>>> Stashed changes
 
         except Exception as err:
             pass  # nosec
