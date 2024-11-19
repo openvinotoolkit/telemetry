@@ -14,11 +14,18 @@ from ..utils.params import telemetry_params
 import multiprocessing
 
 
+def _send_func(request_data):
+    try:
+        request.urlopen(request_data)  # nosec
+    except Exception as err:
+        pass  # nosec
+
+
 class GA4Backend(TelemetryBackend):
     id = 'ga4'
     cid_filename = 'openvino_ga_cid'
     old_cid_filename = 'openvino_ga_uid'
-    timeout = 1.0
+    timeout = 3.0
 
     def __init__(self, tid: str = None, app_name: str = None, app_version: str = None):
         super(GA4Backend, self).__init__(tid, app_name, app_version)
@@ -38,11 +45,6 @@ class GA4Backend(TelemetryBackend):
         if message is None:
             return
         try:
-            def _send_func(request_data):
-                try:
-                    request.urlopen(request_data)  # nosec
-                except Exception as err:
-                    pass  # nosec
             data = json.dumps(message).encode()
 
             if self.backend_url.lower().startswith('http'):
