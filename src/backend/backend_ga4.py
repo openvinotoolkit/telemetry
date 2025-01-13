@@ -40,6 +40,7 @@ class GA4Backend(TelemetryBackend):
             'app_name': self.app_name,
             'app_version': self.app_version,
         }
+        self.stats = {}
 
     def send(self, message: dict):
         if message is None:
@@ -90,6 +91,7 @@ class GA4Backend(TelemetryBackend):
                         "event_count": event_value,
                         "session_id": self.session_id,
                         **default_args,
+                        **self.stats
                     }
                 }
             ]
@@ -123,6 +125,9 @@ class GA4Backend(TelemetryBackend):
         self.cid = None
         remove_cid_file(self.cid_filename)
         remove_cid_file(self.old_cid_filename)
+
+    def set_stats(self, data: dict):
+        self.stats = data
 
 
 def is_valid_cid(cid: str):
