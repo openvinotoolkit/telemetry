@@ -30,36 +30,36 @@ class StatsProcessorTest(unittest.TestCase):
 
                     # Test first creation of statistics file
                     self.stats_processor.update_stats(test_data1)
-                    assert os.path.exists(stats_filename)
+                    self.assertTrue(os.path.exists(stats_filename))
                     with open(stats_filename, 'r') as file:
-                        assert file.readlines() == ['{\n', '    "value1": 12,\n', '    "value2": 7,\n', '    "value3": 8\n', '}']
+                        self.assertTrue(file.readlines() == ['{\n', '    "value1": 12,\n', '    "value2": 7,\n', '    "value3": 8\n', '}'])
 
                     status, res = self.stats_processor.get_stats()
-                    assert status
-                    assert res == test_data1
+                    self.assertTrue(status)
+                    self.assertTrue(res == test_data1)
 
                     # Test updating of statistics file
                     test_data2 = {"value1": 15, "a": "abs"}
                     self.stats_processor.update_stats(test_data2)
-                    assert os.path.exists(stats_filename)
+                    self.assertTrue(os.path.exists(stats_filename))
                     with open(stats_filename, 'r') as file:
-                        assert file.readlines() == ['{\n', '    "value1": 15,\n', '    "a": "abs"\n', '}']
+                        self.assertTrue(file.readlines() == ['{\n', '    "value1": 15,\n', '    "a": "abs"\n', '}'])
 
                     status, res = self.stats_processor.get_stats()
-                    assert status
-                    assert res == test_data2
+                    self.assertTrue(status)
+                    self.assertTrue(res == test_data2)
 
                     # Test removing of statistics file
                     self.stats_processor.remove_stats_file()
-                    assert not os.path.exists(stats_filename)
+                    self.assertFalse(os.path.exists(stats_filename))
 
                     status, res = self.stats_processor.get_stats()
-                    assert not status
-                    assert res == {}
+                    self.assertFalse(status)
+                    self.assertTrue(res == {})
 
                     # Test attempt to read incorrect statistics file
                     with open(stats_filename, 'w') as file:
                         file.write("{ abc")
                     status, res = self.stats_processor.get_stats()
-                    assert not status
-                    assert res == {}
+                    self.assertFalse(status)
+                    self.assertTrue(res == {})

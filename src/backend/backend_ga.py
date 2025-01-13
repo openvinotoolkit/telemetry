@@ -115,6 +115,9 @@ class GABackend(TelemetryBackend):
     def cid_file_initialized(self):
         return self.cid is not None
 
+    def set_stats(self, data: dict):
+        pass
+
 
 def is_valid_cid(cid: str):
     try:
