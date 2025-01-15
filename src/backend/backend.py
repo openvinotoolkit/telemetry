@@ -104,5 +104,5 @@ class TelemetryBackend(metaclass=TelemetryBackendMetaClass):
     @abc.abstractmethod
     def set_stats(self, data: dict):
         """
-        Pass additional statistic, which will be added to telemetry messages
+        Pass additional statistics, which will be added to telemetry messages
         """
