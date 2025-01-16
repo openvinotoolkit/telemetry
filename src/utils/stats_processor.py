@@ -59,8 +59,6 @@ class StatsProcessor:
             if not self.create_new_stats_file():
                 return False
         if not os.access(self.stats_file(), os.W_OK):
-            log.warning("Failed to usage statistics. "
-                        "Please allow write access to the following file: {}".format(self.stats_file()))
             return False
         try:
             str_data = json.dumps(stats, indent=4)
@@ -93,6 +91,5 @@ class StatsProcessor:
         stats_file = self.stats_file()
         if os.path.exists(stats_file):
             if not os.access(stats_file, os.W_OK):
-                log.warning("Failed to remove statistics file {}.".format(stats_file))
                 return
             os.remove(stats_file)
