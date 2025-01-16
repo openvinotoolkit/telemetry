@@ -100,3 +100,9 @@ class TelemetryBackend(metaclass=TelemetryBackendMetaClass):
 
         :return: True if client ID file is initialized, otherwise False.
         """
+
+    @abc.abstractmethod
+    def set_stats(self, data: dict):
+        """
+        Pass additional statistics, which will be added to telemetry messages
+        """

@@ -7,8 +7,9 @@ import sys
 from enum import Enum
 
 from .backend.backend import BackendRegistry
-from .utils.opt_in_checker import OptInChecker, ConsentCheckResult, DialogResult
 from .utils.sender import TelemetrySender
+from .utils.opt_in_checker import OptInChecker, ConsentCheckResult, DialogResult
+from .utils.stats_processor import StatsProcessor
 
 
 class OptInStatus(Enum):
@@ -75,6 +76,9 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         if self.consent and not self.backend.cid_file_initialized():
             self.backend.generate_new_cid_file()
+
+        if self.consent:
+            self.backend.set_stats(self.get_stats())
 
         if not enable_opt_in_dialog and self.consent:
             # Try to create directory for client ID if it does not exist
@@ -264,6 +268,8 @@ class Telemetry(metaclass=SingletonMetaClass):
             if prev_status != OptInStatus.DECLINED:
                 telemetry.send_opt_in_event(OptInStatus.DECLINED, prev_status, force_send=True)
             telemetry.backend.remove_cid_file()
+            from .utils.stats_processor import StatsProcessor
+            StatsProcessor().remove_stats_file()
             print("You have successfully opted out to send the telemetry data.")
 
     def send_opt_in_event(self, new_state: OptInStatus, prev_state: OptInStatus = OptInStatus.UNDEFINED,
@@ -282,6 +288,24 @@ class Telemetry(metaclass=SingletonMetaClass):
         else:
             label = "{{prev_state:{}, new_state: {}}}".format(prev_state.value, new_state.value)
             self.send_event("opt_in", new_state.value, label, force_send=force_send)
+
+    def get_stats(self):
+        stats = StatsProcessor()
+        file_exists, data = stats.get_stats()
+        if not file_exists:
+            created = stats.create_new_stats_file()
+            data = {}
+            if not created:
+                return None
+        if "usage_count" in data:
+            usage_count = data["usage_count"]
+            if usage_count < sys.maxsize:
+                usage_count += 1
+        else:
+            usage_count = 1
+        data["usage_count"] = usage_count
+        stats.update_stats(data)
+        return data
 
     @staticmethod
     def opt_in(tid: str):
