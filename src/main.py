@@ -78,7 +78,9 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.backend.generate_new_cid_file()
 
         if self.consent:
-            self.backend.set_stats(self.get_stats())
+            data = self.get_stats()
+            if data is not None and isinstance(data, dict):
+                self.backend.set_stats(data)
 
         if not enable_opt_in_dialog and self.consent:
             # Try to create directory for client ID if it does not exist
