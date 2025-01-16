@@ -8,6 +8,23 @@ import json
 
 
 class StatsProcessor:
+    """
+    The class is used for storing of additional statistics, that need be stored on the local system.
+    For example, number of usages of OpenVino.
+    The class is used by main Telemetry class, for example:
+
+    stats_processor = StatsProcessor()
+    created = stats_processor.create_new_stats_file()
+
+    # store statistics
+    updated = stats_processor.update_stats({"usage_count": 1})
+
+    # read statistics
+    read_status, stats = stats_processor.get_stats()
+
+    # remove statistics file
+    stats_processor.remove_stats_file()
+    """
     def __init__(self):
         self.opt_in_checker = OptInChecker()
 
