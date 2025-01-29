@@ -7,6 +7,7 @@ import logging as log
 
 from copy import copy
 from urllib import request
+import os
 
 from .backend import TelemetryBackend
 from ..utils.cid import get_or_generate_cid, remove_cid_file
@@ -19,6 +20,18 @@ def _send_func(request_data):
         request.urlopen(request_data)  # nosec
     except Exception as err:
         pass  # nosec
+
+
+def is_docker():
+    def text_in_file(text, filename):
+        try:
+            with open(filename, encoding='utf-8') as lines:
+                return any(text in line for line in lines)
+        except OSError:
+            return False
+
+    cgroup = os.path.join('proc', 'self', 'cgroup')
+    return os.path.exists(os.sep + '.dockerenv') or text_in_file('docker', cgroup)
 
 
 class GA4Backend(TelemetryBackend):
@@ -74,10 +87,13 @@ class GA4Backend(TelemetryBackend):
             self.generate_new_session_id()
 
         default_args = copy(self.default_message_attrs)
+        default_args['docker'] = 'False'
         if app_name is not None:
             default_args['app_name'] = app_name
         if app_version is not None:
             default_args['app_version'] = app_version
+        if is_docker():
+            default_args['docker'] = 'True'
 
         payload = {
             "client_id": client_id,
