@@ -29,6 +29,7 @@ class SingletonMetaClass(type):
         return cls.__single_instance
 
 
+
 class Telemetry(metaclass=SingletonMetaClass):
     """
     The main class to send telemetry data. It uses singleton pattern. The instance should be initialized with the
