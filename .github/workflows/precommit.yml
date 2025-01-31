@@ -22,7 +22,7 @@ jobs:
         run: |
           python3 setup.py sdist bdist_wheel
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: wheel
           path: ${{ github.workspace }}/**/*.whl
