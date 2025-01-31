@@ -29,6 +29,7 @@ def is_docker():
                 for line in lines:
                     if text in line:
                         return True
+            return False
         except OSError:
             return False
 
