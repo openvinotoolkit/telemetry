@@ -22,9 +22,14 @@ def _send_func(request_data):
         pass  # nosec
 
 def is_docker():
-    from pathlib import Path
-    cgroup = Path('/proc/self/cgroup')
-    return Path('/.dockerenv').is_file() or cgroup.is_file() and 'docker' in cgroup.read_text()
+    def text_in_file(text, filename):
+        try:
+            with open(filename, encoding='utf-8') as lines:
+                return any(text in line for line in lines)
+        except OSError:
+            return False
+    cgroup = '/proc/self/cgroup'
+    return os.path.exists('/.dockerenv') or text_in_file('docker', cgroup)
 
 class GA4Backend(TelemetryBackend):
     id = 'ga4'

@@ -105,7 +105,5 @@ class GA4Test(unittest.TestCase):
     def test_is_docker(self):
         from .backend_ga4 import is_docker
         run_from_docker = "DOCKER_RUN" in os.environ and os.environ["DOCKER_RUN"].lower() == "true"
-        print("os.environ {}".format(os.environ["DOCKER_RUN"]))
-        print("is docker {}".format(is_docker()))
 
         self.assertTrue(run_from_docker == is_docker())
