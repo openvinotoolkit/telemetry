@@ -21,15 +21,21 @@ def _send_func(request_data):
     except Exception as err:
         pass  # nosec
 
+
 def is_docker():
-    def text_in_file(text, filename):
+    def file_has_text(text, filename):
         try:
             with open(filename, encoding='utf-8') as lines:
-                return any(text in line for line in lines)
+                for line in lines:
+                    if text in line:
+                        return True
         except OSError:
             return False
 
-    return os.path.exists('/.dockerenv') or text_in_file('docker', '/proc/self/cgroup') or text_in_file('docker', '/proc/self/mountinfo')
+    return os.path.exists('/.dockerenv') or \
+           file_has_text('docker', '/proc/self/cgroup') or \
+           file_has_text('docker', '/proc/self/mountinfo')
+
 
 class GA4Backend(TelemetryBackend):
     id = 'ga4'
