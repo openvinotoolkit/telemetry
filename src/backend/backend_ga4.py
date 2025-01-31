@@ -28,8 +28,8 @@ def is_docker():
                 return any(text in line for line in lines)
         except OSError:
             return False
-    cgroup = '/proc/self/cgroup'
-    return os.path.exists('/.dockerenv') or text_in_file('docker', cgroup)
+
+    return os.path.exists('/.dockerenv') or text_in_file('docker', '/proc/self/cgroup') or text_in_file('docker', '/proc/self/mountinfo')
 
 class GA4Backend(TelemetryBackend):
     id = 'ga4'
