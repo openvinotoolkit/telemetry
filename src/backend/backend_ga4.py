@@ -30,7 +30,7 @@ def is_docker():
                     if text in line:
                         return True
             return False
-        except OSError:
+        except:
             return False
 
     return os.path.exists('/.dockerenv') or \
