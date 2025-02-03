@@ -26,3 +26,12 @@ jobs:
         with:
           name: wheel
           path: ${{ github.workspace }}/**/*.whl
+
+  Run_Docker_Tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: git ls-tree
+        run: |
+          docker build --tag 'image_tests' .

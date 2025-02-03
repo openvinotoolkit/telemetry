@@ -73,7 +73,8 @@ class GeneralTelemetryTest(unittest.TestCase):
                                          'session_id': session_id,
                                          'app_name': app_name,
                                          'app_version': app_version,
-                                         'usage_count': 1}
+                                         'usage_count': 1,
+                                         'docker': 'False'}
                                     }
                                ]}
 

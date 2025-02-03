@@ -101,3 +101,9 @@ class GA4Test(unittest.TestCase):
                                                     self.backend.old_cid_filename)
 
                 self.assertTrue(cid_value == new_cid)
+
+    def test_is_docker(self):
+        from .backend_ga4 import is_docker
+        run_from_docker = "DOCKER_RUN" in os.environ and os.environ["DOCKER_RUN"].lower() == "true"
+
+        self.assertTrue(run_from_docker == is_docker())
