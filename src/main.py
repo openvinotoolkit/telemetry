@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2024 Intel Corporation
+# Copyright (C) 2018-2025 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 import logging as log
@@ -334,4 +334,4 @@ class Telemetry(metaclass=SingletonMetaClass):
         """
         Returns version of telemetry library.
         """
-        return '2025.0.0'
+        return '2025.0.1'
