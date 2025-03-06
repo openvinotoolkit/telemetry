@@ -76,7 +76,7 @@ class GA4Backend(TelemetryBackend):
                 # request.urlopen() may hang on Linux if there's no internet connection,
                 # so we need to run it in a subprocess and terminate after timeout.
 
-                # Usage of subprocesses on Windows cause unexpected behaviour, when script
+                # Usage of subprocesses on Windows cause unexpected behavior, when script
                 # executes multiple times during subprocess initializing. For this reason
                 # subprocess are not recommended on Windows.
                 import multiprocessing
