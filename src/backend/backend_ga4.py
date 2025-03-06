@@ -12,7 +12,7 @@ import os
 from .backend import TelemetryBackend
 from ..utils.cid import get_or_generate_cid, remove_cid_file
 from ..utils.params import telemetry_params
-import multiprocessing
+from platform import system
 
 
 def _send_func(request_data):
@@ -70,13 +70,23 @@ class GA4Backend(TelemetryBackend):
             else:
                 log.info("Incorrect backend URL.")
                 return
-            process = multiprocessing.Process(target=_send_func, args=(req,))
-            process.daemon = True
-            process.start()
+            if system() == 'Windows':
+                _send_func(req)
+            else:
+                # request.urlopen() may hang on Linux if there's no internet connection,
+                # so we need to run it in a subprocess and terminate after timeout.
 
-            process.join(self.timeout)
-            if process.is_alive():
-                process.terminate()
+                # Usage of subprocesses on Windows cause unexpected behaviour, when script
+                # executes multiple times during subprocess initializing. For this reason
+                # subprocess are not recommended on Windows.
+                import multiprocessing
+                process = multiprocessing.Process(target=_send_func, args=(req,))
+                process.daemon = True
+                process.start()
+
+                process.join(self.timeout)
+                if process.is_alive():
+                    process.terminate()
 
         except Exception as err:
             pass  # nosec
