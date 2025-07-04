@@ -305,7 +305,21 @@ class Telemetry(metaclass=SingletonMetaClass):
                 usage_count += 1
         else:
             usage_count = 1
+        if usage_count is None or usage_count <= 0:
+            log.warning("Invalid usage count.")
+            return data
         data["usage_count"] = usage_count
+        if usage_count == 1:
+            data["usage_group"] = "first_usage"
+        elif usage_count <= 100:
+            data["usage_group"] = "1-100_usages"
+        elif usage_count <= 1000:
+            data["usage_group"] = "101-1000_usages"
+        elif usage_count <= 5000:
+            data["usage_group"] = "1001-5000_usages"
+        else:
+            data["usage_group"] = "5000+_usages"
+
         stats.update_stats(data)
         return data
 
