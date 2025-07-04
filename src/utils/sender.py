@@ -55,10 +55,9 @@ class TelemetrySender:
                 need_sleep = True
         if need_sleep:
             sleep(timeout)
-        self.executor.shutdown(wait=False)
+        self.executor.shutdown(wait=False, cancel_futures=True)
 
         try:
             self.executor._threads.clear()
-            futures.thread._threads_queues.clear()
         except Exception as err:
             pass  # nosec
