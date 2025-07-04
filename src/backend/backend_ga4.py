@@ -56,6 +56,7 @@ class GA4Backend(TelemetryBackend):
         self.default_message_attrs = {
             'app_name': self.app_name,
             'app_version': self.app_version,
+            'os': system(),
         }
         self.stats = {}
 
