@@ -74,7 +74,8 @@ class GeneralTelemetryTest(unittest.TestCase):
                                          'app_name': app_name,
                                          'app_version': app_version,
                                          'usage_count': 1,
-                                         'docker': 'False'}
+                                         'docker': 'False',
+                                         'usage_group': 'first_usage'}
                                     }
                                ]}
 
