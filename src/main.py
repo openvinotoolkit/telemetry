@@ -57,6 +57,11 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         self.init(app_name, app_version, tid, backend, enable_opt_in_dialog, disable_in_ci)
 
+        if self.consent:
+            data = self.get_stats()
+            if data is not None and isinstance(data, dict):
+                self.backend.set_stats(data)
+
     def init(self, app_name: str = None, app_version: str = None, tid: str = None,
              backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False):
         opt_in_checker = OptInChecker()
@@ -76,11 +81,6 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         if self.consent and not self.backend.cid_file_initialized():
             self.backend.generate_new_cid_file()
-
-        if self.consent:
-            data = self.get_stats()
-            if data is not None and isinstance(data, dict):
-                self.backend.set_stats(data)
 
         if not enable_opt_in_dialog and self.consent:
             # Try to create directory for client ID if it does not exist
@@ -301,14 +301,15 @@ class Telemetry(metaclass=SingletonMetaClass):
                 return None
         if "usage_count" in data:
             usage_count = data["usage_count"]
+            if usage_count is None or not isinstance(usage_count, int) or usage_count <= 0:
+                log.warning("Invalid usage count.")
+                return data
             if usage_count < sys.maxsize:
                 usage_count += 1
         else:
             usage_count = 1
-        if usage_count is None or usage_count <= 0:
-            log.warning("Invalid usage count.")
-            return data
         data["usage_count"] = usage_count
+        stats.update_stats(data)
         if usage_count == 1:
             data["usage_group"] = "first_usage"
         elif usage_count <= 100:
@@ -320,7 +321,6 @@ class Telemetry(metaclass=SingletonMetaClass):
         else:
             data["usage_group"] = "5000+_usages"
 
-        stats.update_stats(data)
         return data
 
     @staticmethod
