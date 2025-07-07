@@ -55,15 +55,10 @@ class Telemetry(metaclass=SingletonMetaClass):
                                    'application name, version and TID.')
             return
 
-        self.init(app_name, app_version, tid, backend, enable_opt_in_dialog, disable_in_ci)
-
-        if self.consent:
-            data = self.get_stats()
-            if data is not None and isinstance(data, dict):
-                self.backend.set_stats(data)
+        self.init(app_name, app_version, tid, backend, enable_opt_in_dialog, disable_in_ci, True)
 
     def init(self, app_name: str = None, app_version: str = None, tid: str = None,
-             backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False):
+             backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False, increment_stats=False):
         opt_in_checker = OptInChecker()
         opt_in_check_result = opt_in_checker.check(enable_opt_in_dialog, disable_in_ci)
         if enable_opt_in_dialog:
@@ -81,6 +76,11 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         if self.consent and not self.backend.cid_file_initialized():
             self.backend.generate_new_cid_file()
+
+        if self.consent:
+            data = self.get_stats(increment_stats)
+            if data is not None and isinstance(data, dict):
+                self.backend.set_stats(data)
 
         if not enable_opt_in_dialog and self.consent:
             # Try to create directory for client ID if it does not exist
@@ -291,7 +291,7 @@ class Telemetry(metaclass=SingletonMetaClass):
             label = "{{prev_state:{}, new_state: {}}}".format(prev_state.value, new_state.value)
             self.send_event("opt_in", new_state.value, label, force_send=force_send)
 
-    def get_stats(self):
+    def get_stats(self, update_usage_num: bool):
         stats = StatsProcessor()
         file_exists, data = stats.get_stats()
         if not file_exists:
@@ -304,7 +304,7 @@ class Telemetry(metaclass=SingletonMetaClass):
             if usage_count is None or not isinstance(usage_count, int) or usage_count <= 0:
                 log.warning("Invalid usage count.")
                 return data
-            if usage_count < sys.maxsize:
+            if usage_count < sys.maxsize and update_usage_num:
                 usage_count += 1
         else:
             usage_count = 1
