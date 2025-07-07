@@ -4,6 +4,7 @@
 import os
 import unittest
 import uuid
+from platform import system
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, call, patch
 
@@ -73,8 +74,10 @@ class GeneralTelemetryTest(unittest.TestCase):
                                          'session_id': session_id,
                                          'app_name': app_name,
                                          'app_version': app_version,
+                                         'os': system(),
+                                         'docker': 'False',
                                          'usage_count': 1,
-                                         'docker': 'False'}
+                                         'usage_group': 'first_usage'}
                                     }
                                ]}
 
