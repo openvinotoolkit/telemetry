@@ -59,6 +59,14 @@ class Telemetry(metaclass=SingletonMetaClass):
 
     def init(self, app_name: str = None, app_version: str = None, tid: str = None,
              backend: [str, None] = 'ga', enable_opt_in_dialog=True, disable_in_ci=False, increment_stats=False):
+        if self.opted_out_by_env():
+            # No telemetry is sent and nothing is written to the local machine.
+            self.consent = False
+            self.tid = tid
+            self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
+            self.sender = TelemetrySender()
+            return
+
         opt_in_checker = OptInChecker()
         opt_in_check_result = opt_in_checker.check(enable_opt_in_dialog, disable_in_ci)
         if enable_opt_in_dialog:
@@ -66,6 +74,13 @@ class Telemetry(metaclass=SingletonMetaClass):
         else:
             self.consent = opt_in_check_result == ConsentCheckResult.ACCEPTED or \
                            opt_in_check_result == ConsentCheckResult.NO_FILE
+            # A missing consent file implies consent only if the consent directory is writable,
+            # otherwise the user has no way to opt out (e.g. read-only home directory).
+            if opt_in_check_result == ConsentCheckResult.NO_FILE and \
+                    not opt_in_checker.create_or_check_consent_dir():
+                log.info("Consent directory is not writable and no openvino_telemetry file exists. "
+                         "No data will be sent.")
+                self.consent = False
 
         if tid is None:
             log.warning("Telemetry will not be sent as TID is not specified.")
@@ -85,7 +100,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         if not enable_opt_in_dialog and self.consent:
             # Try to create directory for client ID if it does not exist
             if not opt_in_checker.create_or_check_consent_dir():
-                log.warning("Could not create directory for storing client ID. No data will be sent.")
+                log.warning("Could not create directory for storing client ID.")
                 return
 
             # Generate client ID if it does not exist
@@ -138,6 +153,13 @@ class Telemetry(metaclass=SingletonMetaClass):
                 except KeyboardInterrupt:
                     pass
 
+    @staticmethod
+    def opted_out_by_env():
+        """
+        Returns True if telemetry is disabled with OPENVINO_TELEMETRY_OPTOUT=1 environment variable.
+        """
+        return os.environ.get("OPENVINO_TELEMETRY_OPTOUT", "").strip() == "1"
+
     def check_by_cmd_line_if_dialog_needed(self):
         scripts_to_run_dialog = [
             os.path.join("openvino", "tools", "mo", "main"),
@@ -189,6 +211,8 @@ class Telemetry(metaclass=SingletonMetaClass):
         :param kwargs: additional parameters
         :return: None
         """
+        if self.opted_out_by_env():
+            return
         if self.consent or force_send:
             self.sender.send(self.backend, self.backend.build_event_message(event_category, event_action, event_label,
                                                                             event_value, app_name, app_version,
@@ -233,6 +257,11 @@ class Telemetry(metaclass=SingletonMetaClass):
         :param new_opt_in_status: new opt-in status.
         :return: None
         """
+        if Telemetry.opted_out_by_env():
+            print("Telemetry is disabled by OPENVINO_TELEMETRY_OPTOUT=1 environment variable. "
+                  "The consent file was not updated.")
+            return
+
         app_name = 'opt_in_out'
         app_version = Telemetry.get_version()
         opt_in_checker = OptInChecker()
