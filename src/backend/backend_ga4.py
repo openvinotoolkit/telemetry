@@ -15,6 +15,11 @@ from ..utils.cid import get_or_generate_cid, remove_cid_file
 from ..utils.params import telemetry_params
 from platform import system
 
+# Maximum number of requests in progress, including the ones abandoned after the timeout (e.g. hanging on DNS
+# resolution). It is not less than the maximum number of TelemetrySender workers, so events are not dropped normally.
+MAX_REQUESTS_IN_PROGRESS = 32
+_requests_in_progress = threading.BoundedSemaphore(MAX_REQUESTS_IN_PROGRESS)
+
 
 def _send_func(request_data, timeout):
     try:
@@ -22,6 +27,8 @@ def _send_func(request_data, timeout):
             pass
     except Exception as err:
         pass  # nosec
+    finally:
+        _requests_in_progress.release()
 
 
 def is_docker():
@@ -74,9 +81,17 @@ class GA4Backend(TelemetryBackend):
                 log.info("Incorrect backend URL.")
                 return
             # The timeout of urlopen() does not cover DNS resolution, which may hang without Internet connection,
-            # so the request is sent from a daemon thread which is abandoned after the timeout.
-            thread = threading.Thread(target=_send_func, args=(req, self.timeout), daemon=True)
-            thread.start()
+            # so the request is sent from a daemon thread which is abandoned after the timeout. The slot is released
+            # only when the request thread finishes, so the number of hanging threads is bounded.
+            if not _requests_in_progress.acquire(blocking=False):
+                return  # dropping the message because too many requests are in progress
+            try:
+                thread = threading.Thread(target=_send_func, args=(req, self.timeout),
+                                          name='openvino_telemetry_request', daemon=True)
+                thread.start()
+            except Exception:
+                _requests_in_progress.release()
+                raise
             thread.join(self.timeout)
 
         except Exception as err:

@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 from urllib import request
 
 from .backend import BackendRegistry
-from .backend_ga4 import GA4Backend, is_valid_cid
+from .backend_ga4 import GA4Backend, MAX_REQUESTS_IN_PROGRESS, is_valid_cid
 from ..utils.cid import get_or_generate_cid
 from ..utils.opt_in_checker import OptInChecker
 from ..utils.sender import TelemetrySender
@@ -215,3 +215,46 @@ class GA4SendTest(unittest.TestCase):
 
         self.assertLessEqual(backend.timeout, 3.0)
         self.assertLess(elapsed, 3.5)
+
+    def test_hanging_requests_are_bounded(self):
+        """
+        Checks that requests hanging on DNS resolution after the timeout are bounded, new messages are dropped when
+        the bound is reached, and the slots are freed when the requests finish.
+        """
+        release = threading.Event()
+        resolutions = []
+
+        def hanging_getaddrinfo(*args, **kwargs):
+            resolutions.append(args[0])
+            release.wait(30)
+            raise socket.gaierror("DNS server is not reachable")
+
+        def request_threads():
+            return [t for t in threading.enumerate() if t.name == 'openvino_telemetry_request']
+
+        def wait_for(predicate):
+            deadline = time.time() + 5
+            while not predicate() and time.time() < deadline:
+                time.sleep(0.01)
+
+        backend = GA4Backend("test_tid", "test_app", "test_version")
+        backend.backend_url = "http://telemetry.test/mp/collect"
+        backend.timeout = 0.01
+        message = backend.build_event_message("category", "action", "label")
+        with patch.object(socket, 'getaddrinfo', hanging_getaddrinfo):
+            try:
+                for _ in range(MAX_REQUESTS_IN_PROGRESS + 10):
+                    GA4_SEND(backend, message)
+                wait_for(lambda: len(resolutions) >= MAX_REQUESTS_IN_PROGRESS)
+                self.assertEqual(len(request_threads()), MAX_REQUESTS_IN_PROGRESS)
+                self.assertEqual(len(resolutions), MAX_REQUESTS_IN_PROGRESS)
+            finally:
+                release.set()
+
+            wait_for(lambda: not request_threads())
+            self.assertEqual(request_threads(), [])
+
+            # the slots are freed, so a new message is sent
+            GA4_SEND(backend, message)
+            wait_for(lambda: len(resolutions) > MAX_REQUESTS_IN_PROGRESS)
+            self.assertEqual(len(resolutions), MAX_REQUESTS_IN_PROGRESS + 1)
