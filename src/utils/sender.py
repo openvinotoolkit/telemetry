@@ -64,6 +64,16 @@ class TelemetrySender:
                 self.queue_size -= 1
                 self._cond.notify_all()
 
+    def flush(self, timeout: float):
+        """
+        Waits up to timeout for the queued messages to be sent. Unlike force_shutdown, the sender keeps working.
+
+        :param timeout: maximum time to wait for the queued messages to be sent
+        :return: None
+        """
+        with self._cond:
+            self._cond.wait_for(lambda: self.queue_size == 0, timeout)
+
     def force_shutdown(self, timeout: float):
         """
         Waits up to timeout for the queued messages to be sent, then stops the worker threads. Not yet sent messages

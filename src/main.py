@@ -11,6 +11,9 @@ from .utils.sender import TelemetrySender
 from .utils.opt_in_checker import OptInChecker, ConsentCheckResult, DialogResult
 from .utils.stats_processor import StatsProcessor
 
+# Maximum time to wait for the consent change event to be sent before the opt_in_out command exits
+OPT_IN_EVENT_FLUSH_TIMEOUT = 3.0
+
 
 class OptInStatus(Enum):
     ACCEPTED = "accepted"
@@ -308,6 +311,10 @@ class Telemetry(metaclass=SingletonMetaClass):
             from .utils.stats_processor import StatsProcessor
             StatsProcessor().remove_stats_file()
             print("You have successfully opted out to send the telemetry data.")
+
+        # opt_in_out exits right after this call and the sender workers are daemon threads which do not delay the exit,
+        # so give the consent change event a bounded time to be sent
+        telemetry.sender.flush(OPT_IN_EVENT_FLUSH_TIMEOUT)
 
     def send_opt_in_event(self, new_state: OptInStatus, prev_state: OptInStatus = OptInStatus.UNDEFINED,
                           label: str = "", force_send=False):
