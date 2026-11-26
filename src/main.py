@@ -67,7 +67,7 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.consent = False
             self.tid = tid
             self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
-            self.sender = TelemetrySender()
+            self._replace_sender()
             return
 
         opt_in_checker = OptInChecker()
@@ -90,7 +90,7 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         self.tid = tid
         self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
-        self.sender = TelemetrySender()
+        self._replace_sender()
 
         if self.consent and not self.backend.cid_file_initialized():
             self.backend.generate_new_cid_file()
@@ -155,6 +155,16 @@ class Telemetry(metaclass=SingletonMetaClass):
                         self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
                 except KeyboardInterrupt:
                     pass
+
+    def _replace_sender(self):
+        """
+        Creates a new sender. The previous one is closed: its workers exit after sending the already queued messages,
+        otherwise they would wait for new messages forever and keep the previous sender alive.
+        """
+        previous_sender = getattr(self, 'sender', None)
+        if previous_sender is not None:
+            previous_sender.close()
+        self.sender = TelemetrySender()
 
     @staticmethod
     def opted_out_by_env():

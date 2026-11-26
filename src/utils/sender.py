@@ -26,11 +26,12 @@ class TelemetrySender:
         self._cond = threading.Condition()
         self._threads = []
         self._idle_workers = 0
+        self._closed = False
         self._shutdown = False
 
     def send(self, backend: TelemetryBackend, message: Message):
         with self._cond:
-            if self._shutdown or self.queue_size >= MAX_QUEUE_SIZE:
+            if self._closed or self._shutdown or self.queue_size >= MAX_QUEUE_SIZE:
                 return  # dropping a message because the sender is stopped or the queue is full
             self.queue_size += 1
             self._queue.put((backend, message))
@@ -52,7 +53,7 @@ class TelemetrySender:
                 with self._cond:
                     self._idle_workers += 1
                 backend, message = self._queue.get()
-            if self._shutdown:
+            if backend is None or self._shutdown:
                 return
             try:
                 backend.send(message)
@@ -73,6 +74,20 @@ class TelemetrySender:
         """
         with self._cond:
             self._cond.wait_for(lambda: self.queue_size == 0, timeout)
+
+    def close(self):
+        """
+        Stops accepting new messages. The worker threads exit after the already queued messages are sent, so the
+        sender and its workers are released. Does not wait.
+
+        :return: None
+        """
+        with self._cond:
+            if self._closed or self._shutdown:
+                return
+            self._closed = True
+            for _ in self._threads:
+                self._queue.put((None, None))  # each worker exits when it gets this after the queued messages
 
     def force_shutdown(self, timeout: float):
         """
