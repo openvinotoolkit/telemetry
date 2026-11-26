@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
+import threading
 import uuid
 import logging as log
 
@@ -15,9 +16,10 @@ from ..utils.params import telemetry_params
 from platform import system
 
 
-def _send_func(request_data):
+def _send_func(request_data, timeout):
     try:
-        request.urlopen(request_data)  # nosec
+        with request.urlopen(request_data, timeout=timeout):  # nosec
+            pass
     except Exception as err:
         pass  # nosec
 
@@ -71,23 +73,11 @@ class GA4Backend(TelemetryBackend):
             else:
                 log.info("Incorrect backend URL.")
                 return
-            if system() == 'Windows':
-                _send_func(req)
-            else:
-                # request.urlopen() may hang on Linux if there's no internet connection,
-                # so we need to run it in a subprocess and terminate after timeout.
-
-                # Usage of subprocesses on Windows cause unexpected behavior, when script
-                # executes multiple times during subprocess initializing. For this reason
-                # subprocess are not recommended on Windows.
-                import multiprocessing
-                process = multiprocessing.Process(target=_send_func, args=(req,))
-                process.daemon = True
-                process.start()
-
-                process.join(self.timeout)
-                if process.is_alive():
-                    process.terminate()
+            # The timeout of urlopen() does not cover DNS resolution, which may hang without Internet connection,
+            # so the request is sent from a daemon thread which is abandoned after the timeout.
+            thread = threading.Thread(target=_send_func, args=(req, self.timeout), daemon=True)
+            thread.start()
+            thread.join(self.timeout)
 
         except Exception as err:
             pass  # nosec
