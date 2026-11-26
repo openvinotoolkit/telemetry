@@ -324,7 +324,7 @@ class GeneralTelemetryTest(unittest.TestCase):
                     os.chmod(test_dir, 0o755)
 
                 # check that telemetry is sent (usage stats can't be stored in a read-only home)
-                tm.sender.executor.shutdown(wait=True)
+                tm.sender.force_shutdown(10)  # waits until the queued message is sent
                 GA4Backend.send.assert_called_once()
                 message = GA4Backend.send.call_args[0][0]
                 self.assertEqual(message['client_id'], client_id)

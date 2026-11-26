@@ -11,6 +11,9 @@ from .utils.sender import TelemetrySender
 from .utils.opt_in_checker import OptInChecker, ConsentCheckResult, DialogResult
 from .utils.stats_processor import StatsProcessor
 
+# Maximum time to wait for the consent change event to be sent before the opt_in_out command exits
+OPT_IN_EVENT_FLUSH_TIMEOUT = 3.0
+
 
 class OptInStatus(Enum):
     ACCEPTED = "accepted"
@@ -64,7 +67,7 @@ class Telemetry(metaclass=SingletonMetaClass):
             self.consent = False
             self.tid = tid
             self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
-            self.sender = TelemetrySender()
+            self._replace_sender()
             return
 
         opt_in_checker = OptInChecker()
@@ -87,7 +90,7 @@ class Telemetry(metaclass=SingletonMetaClass):
 
         self.tid = tid
         self.backend = BackendRegistry.get_backend(backend)(self.tid, app_name, app_version)
-        self.sender = TelemetrySender()
+        self._replace_sender()
 
         if self.consent and not self.backend.cid_file_initialized():
             self.backend.generate_new_cid_file()
@@ -152,6 +155,16 @@ class Telemetry(metaclass=SingletonMetaClass):
                         self.send_opt_in_event(OptInStatus.DECLINED, force_send=True)
                 except KeyboardInterrupt:
                     pass
+
+    def _replace_sender(self):
+        """
+        Creates a new sender. The previous one is closed: its workers exit after sending the already queued messages,
+        otherwise they would wait for new messages forever and keep the previous sender alive.
+        """
+        previous_sender = getattr(self, 'sender', None)
+        if previous_sender is not None:
+            previous_sender.close()
+        self.sender = TelemetrySender()
 
     @staticmethod
     def opted_out_by_env():
@@ -308,6 +321,10 @@ class Telemetry(metaclass=SingletonMetaClass):
             from .utils.stats_processor import StatsProcessor
             StatsProcessor().remove_stats_file()
             print("You have successfully opted out to send the telemetry data.")
+
+        # opt_in_out exits right after this call and the sender workers are daemon threads which do not delay the exit,
+        # so give the consent change event a bounded time to be sent
+        telemetry.sender.flush(OPT_IN_EVENT_FLUSH_TIMEOUT)
 
     def send_opt_in_event(self, new_state: OptInStatus, prev_state: OptInStatus = OptInStatus.UNDEFINED,
                           label: str = "", force_send=False):

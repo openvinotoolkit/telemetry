@@ -1,10 +1,9 @@
 # Copyright (C) 2018-2026 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import logging as log
+import os
+import queue
 import threading
-from concurrent import futures
-from time import sleep
 
 from ..backend.backend import TelemetryBackend
 from ..utils.message import Message
@@ -13,51 +12,94 @@ MAX_QUEUE_SIZE = 1000
 
 
 class TelemetrySender:
+    """
+    Sends messages from a pool of daemon worker threads. Unlike ThreadPoolExecutor, whose workers are joined (and
+    process all queued messages) at the interpreter exit, daemon threads do not delay the exit if there is no Internet
+    connection.
+    """
+
     def __init__(self, max_workers=None):
-        self.executor = futures.ThreadPoolExecutor(max_workers=max_workers)
+        # the same default as for ThreadPoolExecutor
+        self.max_workers = max_workers or min(32, (os.cpu_count() or 1) + 4)
         self.queue_size = 0
-        self._lock = threading.Lock()
+        self._queue = queue.SimpleQueue()
+        self._cond = threading.Condition()
+        self._threads = []
+        self._idle_workers = 0
+        self._closed = False
+        self._shutdown = False
 
     def send(self, backend: TelemetryBackend, message: Message):
-        def _future_callback(future):
-            with self._lock:
-                self.queue_size -= 1
-
-        free_space = False
-        with self._lock:
-            if self.queue_size < MAX_QUEUE_SIZE:
-                free_space = True
-                self.queue_size += 1
-            else:
-                pass  # dropping a message because the queue is full
-        # to avoid dead lock we should not add callback inside the "with self._lock" block because it will be executed
-        # immediately if the fut is available
-        if free_space:
+        with self._cond:
+            if self._closed or self._shutdown or self.queue_size >= MAX_QUEUE_SIZE:
+                return  # dropping a message because the sender is stopped or the queue is full
+            self.queue_size += 1
+            self._queue.put((backend, message))
             try:
-                fut = self.executor.submit(backend.send, message)
-                fut.add_done_callback(_future_callback)
+                if self._idle_workers > 0:
+                    self._idle_workers -= 1
+                elif len(self._threads) < self.max_workers:
+                    thread = threading.Thread(target=self._worker, name='openvino_telemetry_sender', daemon=True)
+                    thread.start()
+                    self._threads.append(thread)
             except Exception as err:
                 pass  # nosec
 
-    def force_shutdown(self, timeout: float):
-        """
-        Forces all threads to be stopped after timeout. The "shutdown" method of the ThreadPoolExecutor removes only not
-        yet scheduled threads and keep running the existing one. In order to stop the already running use some low-level
-        attribute. The operation with low-level attributes is wrapped with the try/except to avoid potential crash if
-        these attributes will removed or renamed.
+    def _worker(self):
+        while True:
+            try:
+                backend, message = self._queue.get_nowait()
+            except queue.Empty:
+                with self._cond:
+                    self._idle_workers += 1
+                backend, message = self._queue.get()
+            if backend is None or self._shutdown:
+                return
+            try:
+                backend.send(message)
+            except Exception as err:
+                pass  # nosec
+            with self._cond:
+                if self._shutdown:
+                    return
+                self.queue_size -= 1
+                self._cond.notify_all()
 
-        :param timeout: timeout to wait before the shutdown
+    def flush(self, timeout: float):
+        """
+        Waits up to timeout for the queued messages to be sent. Unlike force_shutdown, the sender keeps working.
+
+        :param timeout: maximum time to wait for the queued messages to be sent
         :return: None
         """
-        need_sleep = False
-        with self._lock:
-            if self.queue_size > 0:
-                need_sleep = True
-        if need_sleep:
-            sleep(timeout)
-        self.executor.shutdown(wait=False, cancel_futures=True)
+        with self._cond:
+            self._cond.wait_for(lambda: self.queue_size == 0, timeout)
 
-        try:
-            self.executor._threads.clear()
-        except Exception as err:
-            pass  # nosec
+    def close(self):
+        """
+        Stops accepting new messages. The worker threads exit after the already queued messages are sent, so the
+        sender and its workers are released. Does not wait.
+
+        :return: None
+        """
+        with self._cond:
+            if self._closed or self._shutdown:
+                return
+            self._closed = True
+            for _ in self._threads:
+                self._queue.put((None, None))  # each worker exits when it gets this after the queued messages
+
+    def force_shutdown(self, timeout: float):
+        """
+        Waits up to timeout for the queued messages to be sent, then stops the worker threads. Not yet sent messages
+        are dropped. Messages which are being sent do not delay the interpreter exit as the workers are daemon threads.
+
+        :param timeout: maximum time to wait for the queued messages to be sent
+        :return: None
+        """
+        with self._cond:
+            self._cond.wait_for(lambda: self.queue_size == 0, timeout)
+            self._shutdown = True
+            self.queue_size = 0
+            for _ in self._threads:
+                self._queue.put((None, None))  # wake up the workers so they can exit

@@ -1,6 +1,9 @@
 # Copyright (C) 2018-2026 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import os
+import subprocess
+import sys
 import time
 import unittest
 
@@ -41,10 +44,12 @@ class TelemetrySenderStress(unittest.TestCase):
         start_time = time.time()
         # ask to shutdown with timeout of 1 second
         tm.force_shutdown(1)
-        while len(tm.executor._threads):
-            pass
         # check that no more than 3 seconds spent
         self.assertTrue(time.time() - start_time < 3)
+        # the workers stop after the messages being sent are finished
+        for thread in tm._threads:
+            thread.join(3)
+            self.assertFalse(thread.is_alive())
 
     def test_check_shutdown_negative(self):
         """
@@ -57,15 +62,29 @@ class TelemetrySenderStress(unittest.TestCase):
         for _ in range(5):
             tm.send(fake_backend, None)
 
-        try:
-            # wait until all threads finish their work. We use internal ThreadPoolExecutor attribute _work_queue to make
-            # sure that all workers completed their work, so the whole code is wrapped to try/except to avoid exceptions
-            # if internal implementation is changed in the future
-            while tm.executor._work_queue.qsize():
-                pass
-            self.assertTrue(time.time() - start_time > 4.0)
-        except Exception as err:
-            print('[ WARNING ] Error while accessing to ThreadPoolExecutor._work_queue.qsize(): {}'.format(err))
+        while tm.queue_size:
+            time.sleep(0.01)
+        self.assertTrue(time.time() - start_time > 4.0)
+
+    def test_exit_is_not_delayed(self):
+        """
+        Checks that the interpreter exits without waiting for the messages which are queued or being sent, e.g. when
+        requests hang because of no Internet connection.
+        """
+        package = TelemetrySender.__module__.rsplit('.', 2)[0]
+        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        code = ("import time\n"
+                "from {}.utils.sender import TelemetrySender\n"
+                "class HangingBackend:\n"
+                "    def send(self, message):\n"
+                "        time.sleep(3)\n"
+                "tm = TelemetrySender()\n"
+                "for _ in range(100):\n"
+                "    tm.send(HangingBackend(), None)\n"
+                "time.sleep(0.5)\n").format(package)
+        start_time = time.time()
+        subprocess.run([sys.executable, "-c", code], cwd=root_dir, check=True, timeout=60)
+        self.assertLess(time.time() - start_time, 2.5)
 
     def test_check_send_after_shutdown(self):
         """
