@@ -133,6 +133,71 @@ class GeneralTelemetryTest(unittest.TestCase):
                 GA4Backend.send.assert_has_calls([])
                 GA4Backend.send.reset_mock()
 
+    def test_env_opt_out(self):
+        from .backend.backend_ga4 import GA4Backend
+
+        with TemporaryDirectory(prefix=self.test_directory) as test_dir:
+            with TemporaryDirectory(prefix=test_dir + os.sep) as test_subdir:
+
+                self.init_backend(test_dir, test_subdir)
+                GA4Backend.send = MagicMock()
+
+                # create consent file with 1 value, no client id and stats files
+                save_to_file(OptInChecker().consent_file(), "1")
+                files_before = sorted(os.listdir(test_subdir))
+
+                with patch.dict(os.environ, {"OPENVINO_TELEMETRY_OPTOUT": "1"}):
+                    for enable_opt_in_dialog in [True, False]:
+                        tm = Telemetry()
+                        tm.init("app", "version", "tid", backend='ga4', enable_opt_in_dialog=enable_opt_in_dialog)
+                        tm.send_event("a", "b", "c", 3)
+                        tm.send_event("a", "b", "c", 3, force_send=True)
+                        tm.start_session("a")
+                        tm.end_session("a")
+                        tm.send_error("a", "b")
+                        tm.send_stack_trace("a", "b")
+                    Telemetry.opt_in("tid")
+                    Telemetry.opt_out("tid")
+
+                # check that telemetry is not sent and nothing is written
+                GA4Backend.send.assert_not_called()
+                self.assertEqual(sorted(os.listdir(test_subdir)), files_before)
+                with open(OptInChecker().consent_file()) as file:
+                    self.assertEqual(file.read(), "1")
+
+    def test_env_opt_out_after_init_with_consent(self):
+        from .backend.backend_ga4 import GA4Backend
+
+        with TemporaryDirectory(prefix=self.test_directory) as test_dir:
+            with TemporaryDirectory(prefix=test_dir + os.sep) as test_subdir:
+
+                self.init_backend(test_dir, test_subdir)
+                GA4Backend.send = MagicMock()
+
+                # create client id and consent file with 1 value
+                client_id = str(uuid.uuid4())
+                save_to_file(os.path.join(test_subdir, self.backend.cid_filename), client_id)
+                save_to_file(OptInChecker().consent_file(), "1")
+
+                # init telemetry with consent, the variable is not set yet
+                with patch.dict(os.environ):
+                    os.environ.pop("OPENVINO_TELEMETRY_OPTOUT", None)
+                    tm = Telemetry()
+                    tm.init("app", "version", "tid", backend='ga4')
+                self.assertTrue(tm.consent)
+
+                # set the variable after initialization
+                with patch.dict(os.environ, {"OPENVINO_TELEMETRY_OPTOUT": "1"}):
+                    tm.send_event("a", "b", "c", 3)
+                    tm.send_event("a", "b", "c", 3, force_send=True)
+                    tm.start_session("a")
+                    tm.end_session("a")
+                    tm.send_error("a", "b")
+                    tm.send_stack_trace("a", "b")
+
+                # check that telemetry is not sent
+                GA4Backend.send.assert_not_called()
+
     def test_opt_out_with_consent(self):
         from .backend.backend_ga4 import GA4Backend
 
@@ -209,4 +274,59 @@ class GeneralTelemetryTest(unittest.TestCase):
                 session_id = tm.backend.session_id
                 calls = [call(self.make_message(client_id, "app", "version", "a", "b", "c", 3, session_id))]
                 GA4Backend.send.assert_has_calls(calls)
+                GA4Backend.send.reset_mock()
+
+    @unittest.skipIf(system() == 'Windows' or os.geteuid() == 0, "requires POSIX permissions and non-root user")
+    def test_opt_out_read_only_home_no_consent_file(self):
+        from .backend.backend_ga4 import GA4Backend
+
+        with TemporaryDirectory(prefix=self.test_directory) as test_dir:
+            with TemporaryDirectory(prefix=test_dir + os.sep) as test_subdir:
+
+                self.init_backend(test_dir, test_subdir)
+                GA4Backend.send = MagicMock()
+
+                # no consent file was created, home directory is read-only
+                os.chmod(test_dir, 0o555)
+                try:
+                    tm = Telemetry()
+                    tm.init("app", "version", "tid", backend='ga4', enable_opt_in_dialog=False)
+                    tm.send_event("a", "b", "c", 3)
+                finally:
+                    os.chmod(test_dir, 0o755)
+
+                # check that telemetry is not sent
+                self.assertFalse(tm.consent)
+                GA4Backend.send.assert_not_called()
+
+    @unittest.skipIf(system() == 'Windows' or os.geteuid() == 0, "requires POSIX permissions and non-root user")
+    def test_opt_out_read_only_home_with_consent(self):
+        from .backend.backend_ga4 import GA4Backend
+
+        with TemporaryDirectory(prefix=self.test_directory) as test_dir:
+            with TemporaryDirectory(prefix=test_dir + os.sep) as test_subdir:
+
+                self.init_backend(test_dir, test_subdir)
+                GA4Backend.send = MagicMock()
+
+                # create client id
+                client_id = str(uuid.uuid4())
+                save_to_file(os.path.join(test_subdir, self.backend.cid_filename), client_id)
+
+                # create consent file with 1 value, home directory is read-only
+                save_to_file(OptInChecker().consent_file(), "1")
+                os.chmod(test_dir, 0o555)
+                try:
+                    tm = Telemetry()
+                    tm.init("app", "version", "tid", backend='ga4', enable_opt_in_dialog=False)
+                    tm.send_event("a", "b", "c", 3)
+                finally:
+                    os.chmod(test_dir, 0o755)
+
+                # check that telemetry is sent (usage stats can't be stored in a read-only home)
+                tm.sender.executor.shutdown(wait=True)
+                GA4Backend.send.assert_called_once()
+                message = GA4Backend.send.call_args[0][0]
+                self.assertEqual(message['client_id'], client_id)
+                self.assertEqual(message['events'][0]['name'], "b")
                 GA4Backend.send.reset_mock()
