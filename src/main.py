@@ -160,6 +160,14 @@ class Telemetry(metaclass=SingletonMetaClass):
         """
         return os.environ.get("OPENVINO_TELEMETRY_OPTOUT", "").strip() == "1"
 
+    def _send_allowed(self, force_send: bool = False):
+        """
+        Returns True if a message may be sent. OPENVINO_TELEMETRY_OPTOUT=1 overrides consent and force_send.
+        """
+        if self.opted_out_by_env():
+            return False
+        return self.consent or force_send
+
     def check_by_cmd_line_if_dialog_needed(self):
         scripts_to_run_dialog = [
             os.path.join("openvino", "tools", "mo", "main"),
@@ -211,9 +219,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         :param kwargs: additional parameters
         :return: None
         """
-        if self.opted_out_by_env():
-            return
-        if self.consent or force_send:
+        if self._send_allowed(force_send):
             self.sender.send(self.backend, self.backend.build_event_message(event_category, event_action, event_label,
                                                                             event_value, app_name, app_version,
                                                                             **kwargs))
@@ -226,7 +232,7 @@ class Telemetry(metaclass=SingletonMetaClass):
         :param category: the application code
         :return: None
         """
-        if self.consent:
+        if self._send_allowed():
             self.sender.send(self.backend, self.backend.build_session_start_message(category, **kwargs))
 
     def end_session(self, category: str, **kwargs):
@@ -237,15 +243,15 @@ class Telemetry(metaclass=SingletonMetaClass):
         :param category: the application code
         :return: None
         """
-        if self.consent:
+        if self._send_allowed():
             self.sender.send(self.backend, self.backend.build_session_end_message(category, **kwargs))
 
     def send_error(self, category: str, error_msg: str, **kwargs):
-        if self.consent:
+        if self._send_allowed():
             self.sender.send(self.backend, self.backend.build_error_message(category, error_msg, **kwargs))
 
     def send_stack_trace(self, category: str, stack_trace: str, **kwargs):
-        if self.consent:
+        if self._send_allowed():
             self.sender.send(self.backend, self.backend.build_stack_trace_message(category, stack_trace, **kwargs))
 
     @staticmethod

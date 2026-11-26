@@ -165,6 +165,39 @@ class GeneralTelemetryTest(unittest.TestCase):
                 with open(OptInChecker().consent_file()) as file:
                     self.assertEqual(file.read(), "1")
 
+    def test_env_opt_out_after_init_with_consent(self):
+        from .backend.backend_ga4 import GA4Backend
+
+        with TemporaryDirectory(prefix=self.test_directory) as test_dir:
+            with TemporaryDirectory(prefix=test_dir + os.sep) as test_subdir:
+
+                self.init_backend(test_dir, test_subdir)
+                GA4Backend.send = MagicMock()
+
+                # create client id and consent file with 1 value
+                client_id = str(uuid.uuid4())
+                save_to_file(os.path.join(test_subdir, self.backend.cid_filename), client_id)
+                save_to_file(OptInChecker().consent_file(), "1")
+
+                # init telemetry with consent, the variable is not set yet
+                with patch.dict(os.environ):
+                    os.environ.pop("OPENVINO_TELEMETRY_OPTOUT", None)
+                    tm = Telemetry()
+                    tm.init("app", "version", "tid", backend='ga4')
+                self.assertTrue(tm.consent)
+
+                # set the variable after initialization
+                with patch.dict(os.environ, {"OPENVINO_TELEMETRY_OPTOUT": "1"}):
+                    tm.send_event("a", "b", "c", 3)
+                    tm.send_event("a", "b", "c", 3, force_send=True)
+                    tm.start_session("a")
+                    tm.end_session("a")
+                    tm.send_error("a", "b")
+                    tm.send_stack_trace("a", "b")
+
+                # check that telemetry is not sent
+                GA4Backend.send.assert_not_called()
+
     def test_opt_out_with_consent(self):
         from .backend.backend_ga4 import GA4Backend
 
